@@ -1,6 +1,6 @@
 source('src/config/include.R',encoding='utf-8')
-source('src/config/db_config.R',encoding='utf-8')
 sourceDir('src/utilities/',encoding='utf-8')
+
 getbasetime_night_crossday = function()
 {
   start = as.POSIXct('2000-01-01 21:01:00')
@@ -57,9 +57,9 @@ getbasetime_day = function()
 }
 
 
-collectdatafromtaobao = function(pattern = 'DLAMI*')
+collectdatafromtaobao = function(path,pattern = 'DLAMI*')
 {
-  path = 'D:/BaiduYunDownload/data'
+  #path = 'D:/BaiduYunDownload/data'
   files = list.files(
     path,pattern = pattern ,recursive = T,ignore.case = T,full.names = T
   )
@@ -97,6 +97,7 @@ collectdatafromtaobao = function(pattern = 'DLAMI*')
     dayperd = paste(daystart,dayend,sep='/')
     p = pricedata[dayperd]
     nump = nrow(p)
+    if(nump == 0) next
     #k线有缺失
     if (basenum != nump)
     {
