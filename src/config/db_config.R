@@ -1,5 +1,3 @@
-require(RMySQL)
-
 
 getMysqlCon = function(dbname)
 {
@@ -17,4 +15,12 @@ writeToMysqltable = function(data,dbname,tbname,overwrite = F)
   returnvalue = dbWriteTable(conn,tbname,data,overwrite=overwrite,row.names = F)
   dbDisconnect(conn)
   return(returnvalue)
+}
+
+getTableData = function(dbname,tbname)
+{
+  conn = getMysqlCon(dbname)
+  data = dbReadTable(conn,tbname)
+  dbDisconnect(conn)
+  return(data)
 }

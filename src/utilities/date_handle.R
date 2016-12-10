@@ -11,7 +11,7 @@ getMonthEnd = function(d)
 #大陆期货夜盘，分钟转日处理函数
 to_day = function(pricedata)
 {
-  days = as.character(unique(as.Date(index(pricedata))))
+  days = as.character(unique(substr(as.character(index(pricedata)),1,10)))
   day = days[1]
   price = pricedata[day]
   open = as.numeric(price[1,]$Open)
@@ -30,6 +30,7 @@ to_day = function(pricedata)
     endtime = paste(day,'15:00:00')
     timespan = paste(starttime,endtime,sep='/')
     price = pricedata[timespan]
+    if(nrow(price) == 0) next #可能只有夜盘
     open = as.numeric(price[1,]$Open)
     high = max(as.numeric(price$High))
     low = min(as.numeric(price$Low))

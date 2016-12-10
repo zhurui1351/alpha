@@ -22,6 +22,4 @@ sourceDir <- function(path, trace = TRUE, ...) {
     if(trace) cat("\n")
   }
 }
-
-
 source('src/config/db_config.R',encoding='utf-8')

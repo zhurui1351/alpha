@@ -1,7 +1,8 @@
 source('src/config/include.R',encoding='utf-8')
-sourceDir('src/dw/collectdata',encoding='utf-8')
+source('src/config/db_config.R',encoding='utf-8')
 
 mydb = 'china_future_ods_m'
+mydb_day = 'china_future_ods_day'
 search_path = 'D:/BaiduYunDownload/data'
 overwrite = T
 
@@ -18,10 +19,14 @@ for(i in 1:length(symbols))
   {
     tbname = com[1]
     pattern = com[2]
-    print(com[2])
+    print(com[1])
     data = collectdatafromtaobao(search_path,pattern)
+    daydata = to_day(data)
     data = as.data.frame(data)
     data$datetime = rownames(data)
+    daydata = as.data.frame(daydata)
+    daydata$datetime = rownames(daydata)
     writeToMysqltable(data,mydb,tbname,overwrite)
+    writeToMysqltable(daydata,mydb_day,tbname,overwrite)
   }  
 }
