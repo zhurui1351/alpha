@@ -61,6 +61,7 @@ to_minutes = function(pricedata,k=5)
   i = i + k
   while(i < length(times))
   {
+   # print(i)
     newtime =  times[i]
     ps = pricedata[i:(i+k-1)]
     open = as.numeric(ps[1,]$Open)

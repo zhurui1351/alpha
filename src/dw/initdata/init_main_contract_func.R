@@ -65,7 +65,7 @@ init_main_contract_day = function(tbs,infodb,db,tbnameinfo,tbname)
   rm('main_price')
 }
 
-init_main_force_m(tbs,infodb,infotb,db,tbname)
+init_main_force_m = function(tbs,infodb,db,infotb,tbname)
 {
   #获取单个合约信息
   for(tb in tbs)
@@ -95,7 +95,7 @@ init_main_force_m(tbs,infodb,infotb,db,tbname)
     period = paste(start,end,sep='/')
     
     contract = main_info[i,]$contract
-    contract_data = get(day_contract)
+    contract_data = get(contract)
     contract_data = contract_data[period]
     main_price = rbind(main_price,contract_data)
     
