@@ -10,6 +10,11 @@ soybean_a = list(contract = c('dlax01','dlax03','dlax05','dlax07','dlax09','dlax
 corp = list(contract = c('dlc01','dlc03','dlc05','dlc07','dlc09','dlc11'),main='dlcmi',symbol='dlc')
 #豆二
 soybean_b = list(contract=c('dlb01','dlb03','dlb05','dlb07','dlb09','dlb11'),main='dlbmi',symbol='dlb')
+#豆粕
+soyabean_meal = list(contract=c('dlm01','dlm03','dlm05','dlm06','dlm07','dlm08','dlm09','dlm11','dlm12'),main='dlmmi',symbol='dlm')
+#豆油
+soybean_oil = list(contract=c('dly01','dly03','dly05','dly07','dly08','dly09','dly11','dly12'),main='dlymi',symbol='dly')
 
 
-china_future_symbols = list('corp'=corp,'soybean_a'=soybean_a,'soybean_b'=soybean_b)
+#china_future_symbols = list('corp'=corp,'soybean_a'=soybean_a,'soybean_b'=soybean_b,'soyabean_meal'=soyabean_meal)
+china_future_symbols = list('soybean_oil'=soybean_oil)

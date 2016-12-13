@@ -76,3 +76,12 @@ to_minutes = function(pricedata,k=5)
   }
   return(rs)
 }
+
+#获取交易区间时间
+get_min_series = function()
+{
+  time = seq(as.POSIXct('2001-01-01 09:00:00'),as.POSIXct('2001-01-01 15:00:00'),by='15 min')
+  time = as.character(time)
+  time = substr(time,12,19)
+  return(time)
+}
