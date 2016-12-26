@@ -15,6 +15,8 @@ require("rjson")
 require('XML2R')
 require('rsdmx')
 require('RMySQL')
+require(DMwR)
+
 sourceDir <- function(path, trace = TRUE, ...) {
   for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
     if(trace) cat(nm,":")
