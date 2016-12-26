@@ -23,15 +23,15 @@ getdata = function(dbname,tbname,freq=15)
   votile = subset(votile,time %in% times)
   xx_dcast = dcast(votile,day ~ time,value.var='change')
   xx = xx_dcast[,2:ncol(xx_dcast)]
-  xx = na.omit(xx)
-  pre_xx = xx
-  mean_xx = lag(apply(pre_xx,1,mean),1)
-  sd_xx = lag(apply(pre_xx,1,sd),1)
-  pre_xx = xx - mean_xx
-  pre_xx = pre_xx / sd_xx
-  xx = na.omit(pre_xx)
-  xx[xx == Inf] = 0
-  xx[xx == -Inf] = 0
+  #xx = na.omit(xx)
+  #pre_xx = xx
+  #mean_xx = lag(apply(pre_xx,1,mean),1)
+  #sd_xx = lag(apply(pre_xx,1,sd),1)
+  #pre_xx = xx - mean_xx
+  #pre_xx = pre_xx / sd_xx
+  #xx = na.omit(pre_xx)
+  #xx[xx == Inf] = 0
+  #xx[xx == -Inf] = 0
   #pre_xx$mean = lag(mean_xx,1)
   #pre_xx$sd = lag(sd_xx,1)
 
@@ -39,7 +39,7 @@ getdata = function(dbname,tbname,freq=15)
   y_scaled = scale(y)
   y_t = na.omit(t(y_scaled))
   xx_scaled = scale(xx)
-  n = 10
+  n = 6
   fit = kmeans(xx,n,iter.max = 100)
   centers = fit$centers
   labels = fit$cluster
@@ -58,7 +58,7 @@ getdata = function(dbname,tbname,freq=15)
  
 
 
- cluster_n = 3
+ cluster_n = 6
  index = which(labels == cluster_n)
  
  p = par(mfrow=c(2,1))
@@ -88,7 +88,10 @@ compute_distance = function(centers,k,v)
    distance = apply(sample_centers,MARGIN = 1 ,function(x,v){dist(rbind(x,v))},v)
    min_index = which.min(distance)
    
-   plot(as.numeric(centers[min_index,]),col = 'blue')
-   points(as.numeric(as.numeric(v)),col='red')
+   cen = as.numeric(centers[min_index,])
+   plot(cen,col = 'blue',xlim=c(1,15))
+   points(cen,col='red')
    abline(h = 0,col='yellow')
+   axis(1, 1:length(centers[1,]),names(centers[1,]))
+   
 }
