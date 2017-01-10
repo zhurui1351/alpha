@@ -1,6 +1,7 @@
 require('RCurl')
 require('rjson')
-rawdata_jason  = getURL('http://stock2.finance.sina.com.cn/futures/api/json.php/IndexService.getInnerFuturesMiniKLine15m?symbol=C0')
+require('xts')
+rawdata_jason  = getURL('http://stock2.finance.sina.com.cn/futures/api/json.php/IndexService.getInnerFuturesMiniKLine15m?symbol=C1705')
 rawdata = fromJSON(rawdata_jason)
 data = do.call("rbind",args=rawdata)
 data = as.data.frame(data)
@@ -9,8 +10,9 @@ pricedata = as.data.frame(apply(data[,2:6],2,as.numeric))
 
 pricedata = xts(pricedata,order.by = as.POSIXct(data$DateTime))
 
+date = as.character(Sys.Date())
+x = pricedata[date]
 
-x = pricedata['2016-12-26']
-
-y = Delt(x$Close)
-y[1] = (x[1,]$Close -  x[1,]$Open)/ x[1,]$Open
+y = diff(x$Close)
+y[1] = (x[1,]$Close -  x[1,]$Open)
+v = as.numeric(y)

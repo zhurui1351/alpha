@@ -78,9 +78,10 @@ to_minutes = function(pricedata,k=5)
 }
 
 #获取交易区间时间
-get_min_series = function()
+get_day_trade_min_series = function(freq=15)
 {
-  time = seq(as.POSIXct('2001-01-01 09:00:00'),as.POSIXct('2001-01-01 15:00:00'),by='15 min')
+  by = paste(freq,'min')
+  time = seq(as.POSIXct('2001-01-01 09:00:00'),as.POSIXct('2001-01-01 15:00:00'),by=by)
   time = as.character(time)
   time = substr(time,12,19)
   return(time)
