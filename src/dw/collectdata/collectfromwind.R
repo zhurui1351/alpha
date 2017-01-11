@@ -17,7 +17,7 @@ index(pricedata) = index(pricedata) - minutes(15)
 
 
 y = diff(pricedata$close)
-#y = pricedata$close - pricedata$open
+y = pricedata$close - pricedata$open
 y[1] = (pricedata[1,]$close - pricedata[1,]$open)
 v = as.numeric(y)
 
