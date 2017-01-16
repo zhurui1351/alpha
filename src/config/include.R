@@ -16,6 +16,7 @@ require('XML2R')
 require('rsdmx')
 require('RMySQL')
 require(DMwR)
+require('pracma')
 
 sourceDir <- function(path, trace = TRUE, ...) {
   for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {

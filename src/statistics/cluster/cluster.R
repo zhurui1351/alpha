@@ -31,9 +31,9 @@ flat_time_data = function(data,diffclose=T,freq=15)
 
 cluster = function(xx,center_num=10,isplot=F)
 {
-  
+  #set.seed(seed)
   xx_scaled = scale(xx)
-  fit = kmeans(xx_scaled,center_num,iter.max = 100)
+  fit = kmpp(xx_scaled,center_num,iter.max = 50000,nstart=100)
   centers = fit$centers
   labels = fit$cluster
   
@@ -55,7 +55,7 @@ cluster = function(xx,center_num=10,isplot=F)
   return(list(centers=centers,labels=labels ))
 }
 
-compute_distance = function(v,centers,k=9,isplot = F)
+predict_center = function(v,centers,k=9,isplot = F)
 {
   vv = v[1:k]
   sample_centers = apply(centers,MARGIN = 1 ,function(x,k){return(x[1:k])},k)
@@ -87,10 +87,8 @@ basic_stats = function()
   cdata = data
   adata = data
   
-  xx_dcast = flat_time_data(data,diffclose=F,freq=freq)
+  xx_dcast = flat_time_data(data,diffclose=T,freq=freq)
   xx = xx_dcast[,2:ncol(xx_dcast)]
-  
-  
   
   num_centers = 15
   result = cluster(xx,num_centers)
@@ -99,14 +97,17 @@ basic_stats = function()
   labels = result[['labels']]
   
   k = 9
-  prlabels = apply(xx,MARGIN = 1,compute_distance,centers,k)
-  point_total = label_data[,(k+1):numcol]
+  numcol = ncol(centers)
+  
+  prlabels = apply(xx,MARGIN = 1,predict_center,centers,k)
+  point_total = xx[,1:numcol]
   point_total_sum = apply(point_total,2,sum)
-  point_total_ratio = apply(point_total,2,function(x){sum(x>=0)/length(x)})
+  point_total_ratio_up = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})
+  point_total_ratio_down = apply(point_total,2,function(x){sum(x<0)/sum(x!=0)})
+  
   
   dt_sep = data.frame()
   dt = data.frame()
-  numcol = ncol(centers)
   for( i in 1:num_centers)
   {
     cluster_n = i
@@ -116,7 +117,7 @@ basic_stats = function()
     point = label_data[,(k+1):numcol]
     
     point_col_sum = apply(point,2,sum)
-    point_col_ratio = apply(point,2,function(x){sum(x>=0)/length(x)})
+    point_col_ratio = apply(point,2,function(x){sum(x>0)/sum(x!=0)})
     
     point_col_sum = cbind(as.data.frame(t(point_col_sum)))
     point_col_ratio = cbind(as.data.frame(t(point_col_ratio)))
@@ -129,19 +130,39 @@ basic_stats = function()
     
     point_sum = apply(point,1,sum)
     total = sum(point_sum)
-    ratio = sum(point_sum>0)/length(point_sum)
-    pvalue = prop.test(count*ratio,count)
-    pvalue = pvalue$p.value
-    r = data.frame(center=i,sum = total,ratio = ratio,count,pvalue=pvalue)
+    
+    upratio = sum(point_sum>0)/sum(point_sum!=0)
+    
+    pvalue = prop.test(count*upratio,count)
+    uppvalue = pvalue$p.value
+    
+    
+    r = data.frame(center=i,sum = total,upratio = upratio,count,uppvalue=uppvalue)
     dt = rbind(dt,r)
   }
   
-  good_dt = subset(dt,dt$pvalue < 0.05 & dt$count > 100)
+  good_dt = subset(dt, dt$uppvalue < 0.05  & dt$count > 100)
   print(dt_sep)
   print(good_dt)
   
-  index_center = which(prlabels == 11)
+  bak = dt_sep
+  index_center = which(prlabels == 14)
   
   
 }
+
+kmpp <- function(X, k,iter.max = 50000, nstart = 100) { 
+  set.seed(1234)  
+  n <- nrow(X) 
+  C <- numeric(k) 
+  C[1] <- sample(1:n, 1) 
+  
+  for (i in 2:k) { 
+    dm <- distmat(X, X[C, ]) 
+    pr <- apply(dm, 1, min); pr[C] <- 0 
+    C[i] <- sample(1:n, 1, prob = pr) 
+  } 
+  
+  return(kmeans(X, X[C, ],iter.max = 50000, nstart = 100) )
+} 
 
