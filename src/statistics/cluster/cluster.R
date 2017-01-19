@@ -29,9 +29,9 @@ flat_time_data = function(data,diffclose=T,freq=15)
   
 }
 
-cluster = function(xx,center_num=10,isplot=F)
+cluster = function(xx,center_num=10,isplot=F,seed=1234)
 {
-  #set.seed(seed)
+  set.seed(seed)
   xx_scaled = scale(xx)
   fit = kmpp(xx_scaled,center_num,iter.max = 50000,nstart=100)
   centers = fit$centers
@@ -77,35 +77,16 @@ predict_center = function(v,centers,k=9,isplot = F)
   
 }
 
-basic_stats = function()
+basic_stats = function(xx,num_centers=15,k=9,centers,labels)
 {
-  dbname = 'china_future_ods_m'
-  tbname = 'dlcmi'
-  freq=15
-  data = getdata(dbname,tbname,freq)
   
-  cdata = data
-  adata = data
-  
-  xx_dcast = flat_time_data(data,diffclose=T,freq=freq)
-  xx = xx_dcast[,2:ncol(xx_dcast)]
-  
-  num_centers = 15
-  result = cluster(xx,num_centers)
-  
-  centers = result[['centers']]
-  labels = result[['labels']]
-  
-  k = 9
   numcol = ncol(centers)
-  
   prlabels = apply(xx,MARGIN = 1,predict_center,centers,k)
   point_total = xx[,1:numcol]
   point_total_sum = apply(point_total,2,sum)
   point_total_ratio_up = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})
   point_total_ratio_down = apply(point_total,2,function(x){sum(x<0)/sum(x!=0)})
-  
-  
+   
   dt_sep = data.frame()
   dt = data.frame()
   for( i in 1:num_centers)
@@ -141,13 +122,7 @@ basic_stats = function()
     dt = rbind(dt,r)
   }
   
-  good_dt = subset(dt, dt$uppvalue < 0.05  & dt$count > 100)
-  print(dt_sep)
-  print(good_dt)
-  
-  bak = dt_sep
-  index_center = which(prlabels == 14)
-  
+  return(list(dt,dt_sep))  
   
 }
 
@@ -165,4 +140,54 @@ kmpp <- function(X, k,iter.max = 50000, nstart = 100) {
   
   return(kmeans(X, X[C, ],iter.max = 50000, nstart = 100) )
 } 
+
+run =function()
+{
+  dbname ='china_future_ods_m'
+  tbname = 'dlcmi'
+  freq = 15
+  data = getdata(dbname,tbname,freq)
+  
+  
+  
+  num_centers = 15
+  
+  xx_dcast = flat_time_data(data,diffclose=T,freq=freq)
+  xx = xx_dcast[,2:ncol(xx_dcast)] 
+  
+  result = cluster(xx,num_centers)
+  
+  centers = result[['centers']]
+  labels = result[['labels']]
+    
+  xx_dcast = flat_time_data(data,diffclose=F,freq=freq)
+  xx = xx_dcast[,2:ncol(xx_dcast)] 
+  result = cluster(xx,num_centers)
+  
+  centers_op = result[['centers']]
+  labels_op = result[['labels']]
+  
+  pricedata = getWindData()
+  y = diff(pricedata$close)
+  y[1] = (pricedata[1,]$close - pricedata[1,]$open)
+  v1 = as.numeric(y)
+  
+  y = pricedata$close - pricedata$open
+  v2 = as.numeric(y)
+  k = 9
+  
+  dt_diffclose = basic_stats(xx,num_centers=num_centers,k=k,centers=centers,labels=labels)
+  dt_dc = dt_diffclose[[1]]
+  dt_dc_sep = dt_diffclose[[2]]
+  
+  good_dt = subset(dt_dc, dt_dc$uppvalue < 0.05 )# & dt_dc$count > 100)
+  predict_center(v1,centers,k)
+  
+  
+  dt_open = basic_stats(xx,num_centers=num_centers,k=k,centers=centers_op,labels=labels_op)
+  dt_op = dt_open[[1]]
+  dt_op_sep = dt_open[[2]]
+  
+  predict_center(v2,centers,k)
+}
 

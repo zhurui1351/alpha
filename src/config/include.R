@@ -1,22 +1,18 @@
-require('quantmod')
-require('TTR')
-require('dygraphs')
-require('lubridate')
-require('dplyr')
-require('data.table')
-require('e1071')
-require("randomForest")
-require('rpart')
-require('rpart.plot')
-require('reshape2')
-require('dplyr')
-require('RCurl')
-require("rjson")
-require('XML2R')
-require('rsdmx')
-require('RMySQL')
-require(DMwR)
-require('pracma')
+
+all_packages = c('quantmod','TTR','dygraphs','lubridate','dplyr','data.table','e1071','randomForest','rpart',
+                 'rpart.plot','reshape2','dplyr','RCurl','rjson','XML2R','rsdmx','RMySQL','DMwR',
+                 'pracma','Matrix','arules','arulesSequences','WindR')
+
+for(pack in all_packages)
+{
+  if(!require(pack,character.only=T))
+  {
+    print('installing:')
+    print(pack)
+    install.packages(pack)
+    require(pack,character.only=T)
+  }
+}
 
 sourceDir <- function(path, trace = TRUE, ...) {
   for (nm in list.files(path, pattern = "[.][RrSsQq]$")) {
