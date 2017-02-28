@@ -1,6 +1,6 @@
 source('src/config/include.R',encoding='utf-8')
 sourceDir('src/dw/interface')
-
+source('src/dw/collectdata/collectfromwind.R')
 flat_time_data = function(data,diffclose=T,freq=15)
 {
   time = as.character(index(data))
@@ -12,7 +12,8 @@ flat_time_data = function(data,diffclose=T,freq=15)
   if(diffclose)
   {
     votile = as.data.frame(diff(data$Close))
-    votile[time %in% c('09:00:00'),] = data_open_votile
+    votile = as.data.frame(data$Close)
+    #votile[time %in% c('09:00:00'),] = data_open_votile
     
   }
   else
@@ -31,7 +32,10 @@ flat_time_data = function(data,diffclose=T,freq=15)
 
 cluster = function(xx,center_num=10,isplot=F,seed=1234)
 {
-  set.seed(seed)
+  if(seed !='')
+  {
+    set.seed(seed)
+  }
   xx_scaled = scale(xx)
   fit = kmpp(xx_scaled,center_num,iter.max = 50000,nstart=100)
   centers = fit$centers
@@ -54,6 +58,23 @@ cluster = function(xx,center_num=10,isplot=F,seed=1234)
   
   return(list(centers=centers,labels=labels ))
 }
+
+
+kmpp <- function(X, k,iter.max = 50000, nstart = 100) { 
+  set.seed(1234)  
+  n <- nrow(X) 
+  C <- numeric(k) 
+  C[1] <- sample(1:n, 1) 
+  
+  for (i in 2:k) { 
+    dm <- distmat(X, X[C, ]) 
+    pr <- apply(dm, 1, min); pr[C] <- 0 
+    C[i] <- sample(1:n, 1, prob = pr) 
+  } 
+  
+  return(kmeans(X, X[C, ],iter.max = 50000, nstart = 100) )
+} 
+
 
 predict_center = function(v,centers,k=9,isplot = F)
 {
@@ -82,10 +103,6 @@ basic_stats = function(xx,num_centers=15,k=9,centers,labels)
   
   numcol = ncol(centers)
   prlabels = apply(xx,MARGIN = 1,predict_center,centers,k)
-  point_total = xx[,1:numcol]
-  point_total_sum = apply(point_total,2,sum)
-  point_total_ratio_up = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})
-  point_total_ratio_down = apply(point_total,2,function(x){sum(x<0)/sum(x!=0)})
    
   dt_sep = data.frame()
   dt = data.frame()
@@ -114,7 +131,7 @@ basic_stats = function(xx,num_centers=15,k=9,centers,labels)
     
     upratio = sum(point_sum>0)/sum(point_sum!=0)
     
-    pvalue = prop.test(count*upratio,count)
+    pvalue = prop.test(count*upratio,count,0.55,alternative='greater')
     uppvalue = pvalue$p.value
     
     
@@ -126,21 +143,6 @@ basic_stats = function(xx,num_centers=15,k=9,centers,labels)
   
 }
 
-kmpp <- function(X, k,iter.max = 50000, nstart = 100) { 
-  set.seed(1234)  
-  n <- nrow(X) 
-  C <- numeric(k) 
-  C[1] <- sample(1:n, 1) 
-  
-  for (i in 2:k) { 
-    dm <- distmat(X, X[C, ]) 
-    pr <- apply(dm, 1, min); pr[C] <- 0 
-    C[i] <- sample(1:n, 1, prob = pr) 
-  } 
-  
-  return(kmeans(X, X[C, ],iter.max = 50000, nstart = 100) )
-} 
-
 run =function()
 {
   dbname ='china_future_ods_m'
@@ -148,25 +150,51 @@ run =function()
   freq = 15
   data = getdata(dbname,tbname,freq)
   
-  
-  
-  num_centers = 15
+  num_centers = 10
+  seed = 2134
   
   xx_dcast = flat_time_data(data,diffclose=T,freq=freq)
   xx = xx_dcast[,2:ncol(xx_dcast)] 
   
-  result = cluster(xx,num_centers)
+  indices = which(apply(xx,MARGIN=1,function(x)(all(as.numeric(x)==x[1]))))
+  xx=xx[-indices,]
   
+  numcol = ncol(xx)
+  point_total = xx[,1:numcol]
+  point_total_ratio_up = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})
+  point_total_ratio_down = apply(point_total,2,function(x){sum(x<0)/sum(x!=0)})
+  
+  result = cluster(xx,num_centers,seed=seed)
   centers = result[['centers']]
   labels = result[['labels']]
-    
-  xx_dcast = flat_time_data(data,diffclose=F,freq=freq)
-  xx = xx_dcast[,2:ncol(xx_dcast)] 
-  result = cluster(xx,num_centers)
   
+  
+  xx_dcast = flat_time_data(data,diffclose=F,freq=freq)
+  xx = xx_dcast[,2:ncol(xx_dcast)]
+
+  numcol = ncol(xx)
+  point_total = xx[,1:numcol]
+  point_total_ratio_up_op = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})
+  point_total_ratio_down_op = apply(point_total,2,function(x){sum(x<0)/sum(x!=0)})
+  
+  result = cluster(xx,num_centers,seed=seed) 
   centers_op = result[['centers']]
   labels_op = result[['labels']]
   
+  
+  k = 9#length(v1)
+  
+  dt_diffclose = basic_stats(xx,num_centers=num_centers,k=k,centers=centers,labels=labels)
+  dt_dc = dt_diffclose[[1]]
+  dt_dc_sep = dt_diffclose[[2]]
+  
+  good_dt = subset(dt_dc, dt_dc$uppvalue < 0.05 )# & dt_dc$count > 100)
+   
+  dt_open = basic_stats(xx,num_centers=num_centers,k=k,centers=centers_op,labels=labels_op)
+  dt_op = dt_open[[1]]
+  dt_op_sep = dt_open[[2]]
+  
+  #获取实时数据并计算    
   pricedata = getWindData()
   y = diff(pricedata$close)
   y[1] = (pricedata[1,]$close - pricedata[1,]$open)
@@ -174,20 +202,92 @@ run =function()
   
   y = pricedata$close - pricedata$open
   v2 = as.numeric(y)
-  k = 9
-  
-  dt_diffclose = basic_stats(xx,num_centers=num_centers,k=k,centers=centers,labels=labels)
-  dt_dc = dt_diffclose[[1]]
-  dt_dc_sep = dt_diffclose[[2]]
-  
-  good_dt = subset(dt_dc, dt_dc$uppvalue < 0.05 )# & dt_dc$count > 100)
   predict_center(v1,centers,k)
+  predict_center(v2,centers_op,k)
   
   
-  dt_open = basic_stats(xx,num_centers=num_centers,k=k,centers=centers_op,labels=labels_op)
-  dt_op = dt_open[[1]]
-  dt_op_sep = dt_open[[2]]
-  
-  predict_center(v2,centers,k)
 }
 
+strategy_test = function()
+{
+  record = data.frame()
+  k = 9 
+  prlabels = apply(xx,MARGIN = 1,predict_center,centers,k)
+  long_data_label = which(prlabels == 6)
+  days = as.character(xx_dcast[long_data_label,1])
+  
+  stop_point = 15
+  profit_point = 15
+  
+  type = 'long'
+  for(day in days)
+  {
+    dayinfo = data[day]
+    
+    info = dayinfo[(k+1),]
+    open_price = as.numeric(info$Open)
+    
+    open_time = as.character(index(info))
+    
+    stop_price = open_price - stop_point
+    profit_price = open_price + profit_point
+    
+    clear_out = F
+    for(i in (k+1) : nrow(dayinfo))
+    {
+      currentbar = dayinfo[i,]
+      high = as.numeric(currentbar$High)
+      low = as.numeric(currentbar$Low)
+      open = as.numeric(currentbar$Open)
+      close = as.numeric(currentbar$Close)
+      
+      time = as.character(index(currentbar))
+      
+      #止损
+      if(low < stop_price)
+      {
+        out = stop_price
+        clear_out = T
+        cleartime = time
+        break
+      }
+      #止盈
+      if(high > profit_price)
+      {
+        out = profit_price
+        clear_out = T
+        cleartime = time
+        break
+      }
+        
+    }
+    #是否定时出场
+    if(!clear_out)
+    {
+      out = close
+      cleartime = time
+    }
+    
+    r = data.frame(opentime=open_time,open=open_price,cleartime=cleartime,close=out,type = type)
+    record = rbind(record,r)
+  }
+  
+  record$profit = record$close - record$open 
+  sum(record$profit)
+  sum(record$profit > 0) /length(record$profit)
+  
+  
+  xx_scaled = apply(xx,MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
+  xx_scaled = t(xx_scaled)
+  d = dist(xx_scaled,function(x,y){return(hausdorff_dist(x,y))})
+  d = dist(xx_scaled,function(x,y){d=dtw(x,y) 
+                                   return(d$distance)})
+  
+  d = dist(xx_scaled[1:200,],function(x,y){x1 = matrix(x,ncol=1)
+                                   y1 = matrix(y,ncol=1)
+                                   return(Frechet(x1,y1))})
+  Sys.time()
+  d = as.matrix(d)
+  
+  
+}
