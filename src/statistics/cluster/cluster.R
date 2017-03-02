@@ -283,7 +283,7 @@ strategy_test = function()
   d = dist(xx_scaled,function(x,y){d=dtw(x,y) 
                                    return(d$distance)})
   
-  d = dist(xx_scaled[1:200,],function(x,y){x1 = matrix(x,ncol=1)
+  d = dist(xx_scaled,function(x,y){x1 = matrix(x,ncol=1)
                                    y1 = matrix(y,ncol=1)
                                    return(Frechet(x1,y1))})
   Sys.time()

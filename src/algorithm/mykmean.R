@@ -1,8 +1,4 @@
-require('proxy')
-require('pracma')
-require('cluster')
-require('dtw')
-require('SimilarityMeasures')
+
 My_kmeans<-function(data,k,max.iter=10){
 
   mydata = as.matrix(data)
