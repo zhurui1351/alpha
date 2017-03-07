@@ -283,11 +283,29 @@ strategy_test = function()
   d = dist(xx_scaled,function(x,y){d=dtw(x,y) 
                                    return(d$distance)})
   
-  d = dist(xx_scaled,function(x,y){x1 = matrix(x,ncol=1)
-                                   y1 = matrix(y,ncol=1)
-                                   return(Frechet(x1,y1))})
+  d = dist(xx_scaled,function(x,y){#x1 = matrix(c(1:15,x),ncol=2)
+                                   #y1 = matrix(c(1:15,y),ncol=2)
+                                   return(diss.FRECHET(x,y))})
   Sys.time()
   d = as.matrix(d)
   
+  n = 6
+  clust = pam(d,n,diss=T)
+  centers_index = clust$medoids 
+  centers = xx_scaled[centers_index,]
+  labels = clust$clustering
+  plot_centers(centers,n)
+}
+
+plot_centers = function(centers,n)
+{
+  windows(1000,1000)
   
+  plot(centers[1,],type='l',ylim = range(max(centers),min(centers)),xlab='',xaxt = 'n') #ylim = range(-6,6)
+  
+  axis(1, 1:length(centers[1,]),names(centers[1,]))
+  for( i in 2:n)
+  {
+    points(centers[i,],type='l',col=i)
+  }  
 }

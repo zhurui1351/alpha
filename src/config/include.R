@@ -1,6 +1,6 @@
 
 all_packages = c('quantmod','TTR','dygraphs','lubridate','dplyr','data.table','e1071','randomForest','rpart',
-                 'rpart.plot','reshape2','dplyr','RCurl','rjson','XML2R','rsdmx','RMySQL','DMwR',
+                 'rpart.plot','reshape2','dplyr','RCurl','rjson','XML2R','rsdmx','RMySQL','DMwR','TSclust',
                  'pracma','Matrix','arules','arulesSequences','WindR','proxy','pracma','cluster','dtw','SimilarityMeasures'
                  )
 
