@@ -1,6 +1,7 @@
 source('src/config/include.R',encoding='utf-8')
 sourceDir('src/dw/interface')
 source('src/dw/collectdata/collectfromwind.R')
+sourceDir('src/algorithm')
 flat_time_data = function(data,diffclose=T,freq=15)
 {
   time = as.character(index(data))
@@ -283,9 +284,9 @@ strategy_test = function()
   d = dist(xx_scaled,function(x,y){d=dtw(x,y) 
                                    return(d$distance)})
   
-  d = dist(xx_scaled,function(x,y){#x1 = matrix(c(1:15,x),ncol=2)
+  d = dist(xx_scaled[1:100,],function(x,y){#x1 = matrix(c(1:15,x),ncol=2)
                                    #y1 = matrix(c(1:15,y),ncol=2)
-                                   return(diss.FRECHET(x,y))})
+                                   return(frechet_diss(x,y))})
   Sys.time()
   d = as.matrix(d)
   
