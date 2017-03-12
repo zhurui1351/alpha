@@ -31,51 +31,6 @@ flat_time_data = function(data,diffclose=T,freq=15)
   
 }
 
-cluster = function(xx,center_num=10,isplot=F,seed=1234)
-{
-  if(seed !='')
-  {
-    set.seed(seed)
-  }
-  xx_scaled = scale(xx)
-  fit = kmpp(xx_scaled,center_num,iter.max = 50000,nstart=100)
-  centers = fit$centers
-  labels = fit$cluster
-  
-  centers_unscaled = unscale(centers,xx_scaled) 
-  centers = centers_unscaled
-  if(isplot)
-  {
-    windows(1000,1000)
-    
-    plot(centers[1,],type='l',ylim = range(max(centers),min(centers)),xlab='',xaxt = 'n') #ylim = range(-6,6)
-    
-    axis(1, 1:length(centers[1,]),names(centers[1,]))
-    for( i in 2:n)
-    {
-      points(centers[i,],type='l',col=i)
-    }    
-  }  
-  
-  return(list(centers=centers,labels=labels ))
-}
-
-
-kmpp <- function(X, k,iter.max = 50000, nstart = 100) { 
-  set.seed(1234)  
-  n <- nrow(X) 
-  C <- numeric(k) 
-  C[1] <- sample(1:n, 1) 
-  
-  for (i in 2:k) { 
-    dm <- distmat(X, X[C, ]) 
-    pr <- apply(dm, 1, min); pr[C] <- 0 
-    C[i] <- sample(1:n, 1, prob = pr) 
-  } 
-  
-  return(kmeans(X, X[C, ],iter.max = 50000, nstart = 100) )
-} 
-
 
 predict_center = function(v,centers,k=9,isplot = F)
 {
@@ -148,7 +103,7 @@ run =function()
 {
   dbname ='china_future_ods_m'
   tbname = 'dlcmi'
-  freq = 15
+  freq = 5
   data = getdata(dbname,tbname,freq)
   
   num_centers = 10
@@ -159,7 +114,8 @@ run =function()
   
   indices = which(apply(xx,MARGIN=1,function(x)(all(as.numeric(x)==x[1]))))
   xx=xx[-indices,]
-  
+  xx_dcast =xx_dcast[-indices,]
+    
   numcol = ncol(xx)
   point_total = xx[,1:numcol]
   point_total_ratio_up = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})
@@ -283,19 +239,39 @@ strategy_test = function()
   d = dist(xx_scaled,function(x,y){return(hausdorff_dist(x,y))})
   d = dist(xx_scaled,function(x,y){d=dtw(x,y) 
                                    return(d$distance)})
-  
+  d = dist(xx_scaled)
   d = dist(xx_scaled[1:100,],function(x,y){#x1 = matrix(c(1:15,x),ncol=2)
                                    #y1 = matrix(c(1:15,y),ncol=2)
                                    return(frechet_diss(x,y))})
   Sys.time()
   d = as.matrix(d)
   
-  n = 6
+  n = 15
   clust = pam(d,n,diss=T)
-  centers_index = clust$medoids 
+  centers_index = clust$id.med
   centers = xx_scaled[centers_index,]
   labels = clust$clustering
   plot_centers(centers,n)
+  
+  #bline regression
+  x = 1:10
+  nsample =2700
+  
+  y=xx_scaled[nsample,x]
+  fm1 = lm(y ~ bs(x, df = 5))
+  ht <- seq(min(x), max(x), length.out = 200)
+    
+  plot(xx_scaled[nsample,])    
+  lines(ht, predict(fm1, data.frame(x = ht)))
+  
+  x = scale(x)
+  fm = lm(y~x)
+  lines(ht, predict(fm, data.frame(x = ht)))
+  
+  deriv_n = (predict(fm1, data.frame(x = max(x)+0.001)) - predict(fm1, data.frame(x = max(x))))/0.00001
+  deriv_n
+  
+  atan(-0.5971)/pi * 180
 }
 
 plot_centers = function(centers,n)

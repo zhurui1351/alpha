@@ -102,7 +102,48 @@ get_sin_sample = function(row = 20,n=15,scale=0)
   return(result)
 }
 
-cluster1 = get_sin_sample()
-cluster2 = get_sin_sample(scale=2)
-cluster3 = get_sin_sample(scale=3)
-cluster = as.matrix(rbind(cluster1,cluster2,cluster3))
+cluster = function(xx,center_num=10,isplot=F,seed=1234)
+{
+  if(seed !='')
+  {
+    set.seed(seed)
+  }
+  xx_scaled = scale(xx)
+  fit = kmpp(xx_scaled,center_num,iter.max = 50000,nstart=100)
+  centers = fit$centers
+  labels = fit$cluster
+  
+  centers_unscaled = unscale(centers,xx_scaled) 
+  centers = centers_unscaled
+  if(isplot)
+  {
+    windows(1000,1000)
+    
+    plot(centers[1,],type='l',ylim = range(max(centers),min(centers)),xlab='',xaxt = 'n') #ylim = range(-6,6)
+    
+    axis(1, 1:length(centers[1,]),names(centers[1,]))
+    for( i in 2:n)
+    {
+      points(centers[i,],type='l',col=i)
+    }    
+  }  
+  
+  return(list(centers=centers,labels=labels ))
+}
+
+
+kmpp <- function(X, k,iter.max = 50000, nstart = 100) { 
+  set.seed(1234)  
+  n <- nrow(X) 
+  C <- numeric(k) 
+  C[1] <- sample(1:n, 1) 
+  
+  for (i in 2:k) { 
+    dm <- distmat(X, X[C, ]) 
+    pr <- apply(dm, 1, min); pr[C] <- 0 
+    C[i] <- sample(1:n, 1, prob = pr) 
+  } 
+  
+  return(kmeans(X, X[C, ],iter.max = 50000, nstart = 100) )
+} 
+
