@@ -103,7 +103,7 @@ run =function()
 {
   dbname ='china_future_ods_m'
   tbname = 'dlcmi'
-  freq = 5
+  freq = 15
   data = getdata(dbname,tbname,freq)
   
   num_centers = 10
@@ -155,7 +155,7 @@ run =function()
   pricedata = getWindData()
   y = diff(pricedata$close)
   y[1] = (pricedata[1,]$close - pricedata[1,]$open)
-  v1 = as.numeric(y)
+  v1 = as.numeric(y8k786.f)
   
   y = pricedata$close - pricedata$open
   v2 = as.numeric(y)
@@ -253,26 +253,7 @@ strategy_test = function()
   labels = clust$clustering
   plot_centers(centers,n)
   
-  #bline regression
-  x = 1:10
-  nsample =2700
-  
-  y=xx_scaled[nsample,x]
-  fm1 = lm(y ~ bs(x, df = 5))
-  ht <- seq(min(x), max(x), length.out = 200)
-    
-  plot(xx_scaled[nsample,])    
-  lines(ht, predict(fm1, data.frame(x = ht)))
-  
-  x = scale(x)
-  fm = lm(y~x)
-  lines(ht, predict(fm, data.frame(x = ht)))
-  
-  deriv_n = (predict(fm1, data.frame(x = max(x)+0.001)) - predict(fm1, data.frame(x = max(x))))/0.00001
-  deriv_n
-  
-  atan(-0.5971)/pi * 180
-}
+  }
 
 plot_centers = function(centers,n)
 {
