@@ -48,17 +48,17 @@ predict_center = function(v,centers,centers_scale,k=10,ht,x,isplot = F)
   sample_centers = t(sample_centers)
   
   y1 = scale(v[1:k])
-  y2 = scale(v)
+  y2 = as.numeric(scale(v))
   fm_predict = lm(y1 ~ bs(xv, df = 5))
   fm_predict_value = predict(fm_predict, data.frame(xv = ht_pre))
   
   distance = apply(sample_centers,MARGIN = 1 ,function(x,v){dist(rbind(x,v))},fm_predict_value)
   min_index = which.min(distance)
-  
+  print(min_index)
   if(isplot)
   {
     cen = as.numeric(centers_scale[min_index,])
-    plot(x,y2,col = 'blue')
+    plot(x,c(y2,rep(0,(length(x)-length(y2)))),col = 'blue')
     lines(ht_pre,fm_predict_value,col='green')
     lines(ht,cen,col='red')
   }
@@ -128,7 +128,7 @@ run =function()
   indices = which(apply(xx,MARGIN=1,function(x)(all(as.numeric(x)==x[1]))))
   xx=xx[-indices,]
   xx_dcast =xx_dcast[-indices,]
-    
+  
   numcol = ncol(xx)
   point_total = xx[,1:numcol]
   point_total_ratio_up = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})

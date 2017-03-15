@@ -95,16 +95,29 @@ n = 15
 set.seed(1234)
 clust = pam(result,n)
 centers_index = clust$id.med
-centers = result[centers_index,]
+centers_scale = result[centers_index,]
 labels = clust$clustering
 
-centers_orign = xx[centers_index,]
+centers = xx[centers_index,]
 
 windows(3000,3000)
 p =par(mfrow=c(3,5))
 
 for(i in 1:n)
 {
-  plot(ht,centers[i,])
+  plot(ht,centers_scale[i,])
 }
 
+class_n =  xx_dcast[which(labels == 3),]
+
+days = class_n[,'day']
+
+points = sapply(days,function(d){
+  
+  day_data = data[d]
+  op = as.numeric(day_data[11,]$Open)
+  cl = as.numeric(day_data[15,]$Close)
+  gap = cl - op
+  return(gap)
+}
+  )
