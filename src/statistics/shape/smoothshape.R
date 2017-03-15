@@ -98,7 +98,7 @@ centers_index = clust$id.med
 centers = result[centers_index,]
 labels = clust$clustering
 
-centers_orign = xx_scaled[centers_index,]
+centers_orign = xx[centers_index,]
 
 windows(3000,3000)
 p =par(mfrow=c(3,5))

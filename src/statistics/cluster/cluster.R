@@ -32,15 +32,21 @@ flat_time_data = function(data,diffclose=T,freq=15)
 }
 
 
-predict_center = function(v,centers,k=10,ht,x,isplot = F)
+predict_center = function(v,centers,centers_scale,k=10,ht,x,isplot = F)
 {
   vv = x[k]
   ht_pre = ht[ht<=vv]
   kl = length(ht_pre)
-  sample_centers = apply(centers,MARGIN = 1 ,function(x,k){return(x[1:k])},kl)
+  xv = x[1:k]
+  
+  sample_centers = apply(centers,MARGIN = 1 ,function(x,k,xv,ht_pre){
+    y =scale(x[1:k])
+    fm = lm(y ~ bs(xv,df=5))
+    return(predict(fm, data.frame(xv = ht_pre)))
+    
+  },k,xv,ht_pre)
   sample_centers = t(sample_centers)
   
-  xv = x[1:k]
   y1 = scale(v[1:k])
   y2 = scale(v)
   fm_predict = lm(y1 ~ bs(xv, df = 5))
@@ -51,7 +57,7 @@ predict_center = function(v,centers,k=10,ht,x,isplot = F)
   
   if(isplot)
   {
-    cen = as.numeric(centers[min_index,])
+    cen = as.numeric(centers_scale[min_index,])
     plot(x,y2,col = 'blue')
     lines(ht_pre,fm_predict_value,col='green')
     lines(ht,cen,col='red')
