@@ -43,7 +43,7 @@ is_spoonshape(diff_cross)
 transform_bs = function(xx_scaled)
 {
   result = data.frame()
-  ht <- seq(min(x), max(x), length.out = 200)
+  ht <- seq(min(x), max(x), length.out = 225)
   x = 1:15
   x = as.vector(scale(x))
   for(i in 1:nrow(xx_scaled))
@@ -91,11 +91,14 @@ for(i in 1 : nrow(xx_scaled))
   }
 }
 
-n = 6
+n = 15
+set.seed(1234)
 clust = pam(result,n)
 centers_index = clust$id.med
 centers = result[centers_index,]
 labels = clust$clustering
+
+centers_orign = xx_scaled[centers_index,]
 
 windows(3000,3000)
 p =par(mfrow=c(3,5))

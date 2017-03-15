@@ -32,22 +32,29 @@ flat_time_data = function(data,diffclose=T,freq=15)
 }
 
 
-predict_center = function(v,centers,k=9,isplot = F)
+predict_center = function(v,centers,k=10,ht,x,isplot = F)
 {
-  vv = v[1:k]
-  sample_centers = apply(centers,MARGIN = 1 ,function(x,k){return(x[1:k])},k)
+  vv = x[k]
+  ht_pre = ht[ht<=vv]
+  kl = length(ht_pre)
+  sample_centers = apply(centers,MARGIN = 1 ,function(x,k){return(x[1:k])},kl)
   sample_centers = t(sample_centers)
   
-  distance = apply(sample_centers,MARGIN = 1 ,function(x,v){dist(rbind(x,v))},vv)
+  xv = x[1:k]
+  y1 = scale(v[1:k])
+  y2 = scale(v)
+  fm_predict = lm(y1 ~ bs(xv, df = 5))
+  fm_predict_value = predict(fm_predict, data.frame(xv = ht_pre))
+  
+  distance = apply(sample_centers,MARGIN = 1 ,function(x,v){dist(rbind(x,v))},fm_predict_value)
   min_index = which.min(distance)
   
   if(isplot)
   {
     cen = as.numeric(centers[min_index,])
-    plot(v,col = 'blue',xlim=c(1,16),xaxt='n')
-    points(cen,col='red')
-    abline(h = 0,col='yellow')
-    axis(1, 1:length(centers[1,]),names(centers[1,]))
+    plot(x,y2,col = 'blue')
+    lines(ht_pre,fm_predict_value,col='green')
+    lines(ht,cen,col='red')
   }
   
   return(min_index)
@@ -251,19 +258,6 @@ strategy_test = function()
   centers_index = clust$id.med
   centers = xx_scaled[centers_index,]
   labels = clust$clustering
-  plot_centers(centers,n)
   
   }
 
-plot_centers = function(centers,n)
-{
-  windows(1000,1000)
-  
-  plot(centers[1,],type='l',ylim = range(max(centers),min(centers)),xlab='',xaxt = 'n') #ylim = range(-6,6)
-  
-  axis(1, 1:length(centers[1,]),names(centers[1,]))
-  for( i in 2:n)
-  {
-    points(centers[i,],type='l',col=i)
-  }  
-}
