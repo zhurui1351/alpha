@@ -2,7 +2,7 @@ source('src/config/include.R',encoding='utf-8')
 sourceDir('src/dw/interface')
 source('src/dw/collectdata/collectfromwind.R')
 sourceDir('src/algorithm')
-flat_time_data = function(data,diffclose=T,freq=15)
+flat_time_data = function(data,diffclose='cl',freq=15)
 {
   time = as.character(index(data))
   time = substr(time,12,19)
@@ -10,18 +10,23 @@ flat_time_data = function(data,diffclose=T,freq=15)
   times = get_day_trade_min_series(freq)
   data_open = data[time %in% c('09:00:00'),]
   data_open_votile = (data_open$Close - data_open$Open)
-  if(diffclose)
+  if(diffclose == 'cl')
+  {
+    votile = as.data.frame(data$Close)    
+  }
+  else if(diffclose =='diffcl' )
   {
     votile = as.data.frame(diff(data$Close))
-    votile = as.data.frame(data$Close)
-    #votile[time %in% c('09:00:00'),] = data_open_votile
-    
+    votile[time %in% c('09:00:00'),] = data_open_votile
   }
-  else
+  else if(diffclose == 'diffco')
   {
-    votile = as.data.frame(data$Close - data$Open)
-    
-  }  
+    votile = as.data.frame(data$Close - data$Open)  
+  } 
+  else if(diffclose == 'median')
+  {
+    votile = as.data.frame((data$High - data$Low)/2 + data$Low)   
+  }
   colnames(votile) = 'change'
   votile$time = time
   votile$day = as.character(as.Date(rownames(votile)))
@@ -54,10 +59,11 @@ predict_center = function(v,centers,centers_scale,k=10,ht,x,isplot = F)
   
   distance = apply(sample_centers,MARGIN = 1 ,function(x,v){dist(rbind(x,v))},fm_predict_value)
   min_index = which.min(distance)
-  print(min_index)
+  #print(min_index)
   if(isplot)
   {
     cen = as.numeric(centers_scale[min_index,])
+    windows(500,500)
     plot(x,c(y2,rep(0,(length(x)-length(y2)))),col = 'blue')
     lines(ht_pre,fm_predict_value,col='green')
     lines(ht,cen,col='red')
@@ -122,12 +128,16 @@ run =function()
   num_centers = 10
   seed = 2134
   
-  xx_dcast = flat_time_data(data,diffclose=T,freq=freq)
+  xx_dcast = flat_time_data(data,diffclose='cl',freq=freq)
   xx = xx_dcast[,2:ncol(xx_dcast)] 
   
   indices = which(apply(xx,MARGIN=1,function(x)(all(as.numeric(x)==x[1]))))
-  xx=xx[-indices,]
-  xx_dcast =xx_dcast[-indices,]
+  if(length(indices) > 0 )
+  {
+    xx=xx[-indices,]
+    xx_dcast =xx_dcast[-indices,]
+  }
+  
   
   numcol = ncol(xx)
   point_total = xx[,1:numcol]
@@ -182,7 +192,7 @@ strategy_test = function()
 {
   record = data.frame()
   k = 9 
-  prlabels = apply(xx,MARGIN = 1,predict_center,centers,k)
+  prlabels = apply(xx,MARGIN = 1,predict_center,centers,centers_scale,k=9,x,ht)
   long_data_label = which(prlabels == 6)
   days = as.character(xx_dcast[long_data_label,1])
   

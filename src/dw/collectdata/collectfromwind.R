@@ -1,5 +1,3 @@
-require(WindR)
-require(quantmod)
 #w.start()
 
 getWindData = function()
@@ -17,6 +15,15 @@ getWindData = function()
   pricedata = pricedata[2:nrow(pricedata),]
   index(pricedata) = index(pricedata) - minutes(15)
   
+  v = as.numeric(Cl(pricedata))
+  length(v)
+  sd(v)
+  hlc = HLC(pricedata)
+  ATR(hlc,n=5)
+  x = 1:15
+  x = as.vector(scale(x))
+  ht <- seq(min(x), max(x), length.out = 225)
+  predict_center(v,centers,centers_scale,k=length(v),ht,x,isplot = T)
   return(pricedata)
 }
 
