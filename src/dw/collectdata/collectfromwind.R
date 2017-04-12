@@ -23,7 +23,7 @@ getWindData = function()
   x = 1:15
   x = as.vector(scale(x))
   ht <- seq(min(x), max(x), length.out = 225)
-  predict_center(v,centers,centers_scale,k=length(v),ht,x,isplot = T)
+  predict_center(v,centers,centers_scale,k=9,ht,x,isplot = T)
   return(pricedata)
 }
 

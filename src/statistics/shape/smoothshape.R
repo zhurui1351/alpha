@@ -40,21 +40,6 @@ deriv_n = (predict(fm_predict, data.frame(x = max(x)+0.001)) - predict(fm_predic
 
 is_spoonshape(diff_cross)
 
-transform_bs = function(xx_scaled)
-{
-  result = data.frame()
-  x = 1:15
-  x = as.vector(scale(x))
-  ht <- seq(min(x), max(x), length.out = 225)
-  for(i in 1:nrow(xx_scaled))
-  {    
-    nsample =i   
-    y=xx_scaled[nsample,1:15]
-    fm = lm(y ~ bs(x, df = 5))
-    points = predict(fm, data.frame(x = ht))
-    result = rbind(result,points)
-  }
-}
 
 is_spoonshape = function(points)
 {
@@ -91,22 +76,6 @@ for(i in 1 : nrow(xx_scaled))
   }
 }
 
-n = 15
-set.seed(1234)
-clust = pam(result,n)
-centers_index = clust$id.med
-centers_scale = result[centers_index,]
-labels = clust$clustering
-
-centers = xx[centers_index,]
-
-windows(3000,3000)
-p =par(mfrow=c(4,5))
-
-for(i in 1:n)
-{
-  plot(ht,centers_scale[i,])
-}
 
 for( i in 1:n)
 {
@@ -129,114 +98,6 @@ for( i in 1:n)
   print(length(points[points>0]))
 }
 
-center_strategy = function(centers_scale,i,ht,k,threshold=0.5)
-{
-  strategy = 'normal'
-  x = 1:15
-  x = as.vector(scale(x))
-  ht <- seq(min(x), max(x), length.out = 225)
-  piindex = max(which(ht<=x[k]))
-  ratio = centers_scale[i,length(ht)]-centers_scale[i,piindex]
-  if(ratio > threshold)
-    strategy = 'long'
-  else if(ratio < -threshold)
-    strategy = 'short'
-  else
-    strategy = 'normal'
-  return(strategy)    
-}
-
-strategy_test = function(xx,centers,centers_scale)
-{
-  points_result = data.frame()
-  for(i in 1:nrow(xx))
-  {
-    predict_point = 9
-    start_point = predict_point + 1
-    v = as.numeric(xx[i,])
-    day = xx_dcast[i,]$day  
-    tmp = tryCatch(predict_center(v,centers,centers_scale,predict_point,ht,x,F),error=function(e) e)
-    if(inherits(tmp, "error")) next
-    center_pr = tmp
-    strategy = center_strategy(centers_scale,center_pr,ht,predict_point,threshold=0.8)
-    if(strategy == 'normal') next
-        
-    day_data = data[day]
-    open = as.numeric(day_data[1,]$Open)
-    
-    op = as.numeric(day_data[start_point,]$Open)
-    cl = as.numeric(day_data[15,]$Close)
-    
-    hi = max(as.numeric(day_data[start_point:15,]$High))
-    low = min(as.numeric(day_data[start_point:15,]$Low))
-
-    sd = sd(as.numeric(day_data[1:predict_point,]$Close))
-    atr = as.numeric(ATR(HLC(day_data[1:predict_point,]),n=5)$atr)
-  
-    atr = round(atr[length(atr)])
-    sd = round(sd)
-    
-    stopratio = 2
-    profitratio =2
-    
-    var = atr
-    
-    stop_long = round(op - stopratio*var)
-    stop_short = round(op + stopratio*var)
-    profit_long = round(op + profitratio*var)
-    profit_short = round(op - profitratio*var)
-    
-    type = 'normal'
-    
-    for(j in start_point:15)
-    {
-      curbar = day_data[j,]
-      
-      curhigh = curbar$High
-      curlow = curbar$Low
-      
-      if(strategy == 'short' && curhigh >= stop_short)
-      {
-        cl = stop_short
-        type = 'stopshort'
-        break
-      }
-      else if(strategy == 'short' && curlow <= profit_short)
-      {
-        cl = profit_short
-        type = 'profitshort'
-        break
-      }
-      else if(strategy == 'long' && curlow <= stop_long)
-      {
-        cl = stop_long
-        type = 'stoplong'
-        break
-      }
-      else if(strategy == 'long' && curhigh >= profit_long)
-      {
-        cl = profit_long
-        type = 'profitlong'
-        break
-      }    
-    }
-    profit = ifelse(strategy == 'long',(cl-op),(op-cl))
-    r = data.frame(i=i,day=day,center = center_pr,open=open,op=op,hi = hi,low=low,cl=cl,profit=profit,atr=atr,strategy=strategy,type=type)
-    points_result = rbind(points_result,r)
-  }  
-}
-
-profit = points_result$profit
-sum(profit)
-length(profit)
-length(profit[profit>0])/length(profit)
-aggregate(profit,by = list(points_result$center),sum)
-
-aggregate(profit,by = list(points_result$center),function(x){return(c(length(x[x>0])/length(x)))})
-aggregate(profit,by = list(points_result$center),function(x){return(length(x))})
-
-
-sub = subset(points_result,center == 5)
 
 
 n =  100

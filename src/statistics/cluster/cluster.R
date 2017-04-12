@@ -118,6 +118,122 @@ basic_stats = function(xx,num_centers=15,k=9,centers,labels)
   
 }
 
+transform_bs = function(xx_scaled,df=5)
+{
+  result = data.frame()
+  x = 1:15
+  x = as.vector(scale(x))
+  ht <- seq(min(x), max(x), length.out = 225)
+  for(i in 1:nrow(xx_scaled))
+  {    
+    nsample =i   
+    y=xx_scaled[nsample,1:15]
+    fm = lm(y ~ bs(x, df = df))
+    points = predict(fm, data.frame(x = ht))
+    result = rbind(result,points)
+  }
+  return(result)
+}
+
+center_strategy = function(centers_scale,i,ht,k,threshold=0.5)
+{
+  strategy = 'normal'
+  x = 1:15
+  x = as.vector(scale(x))
+  ht <- seq(min(x), max(x), length.out = 225)
+  piindex = max(which(ht<=x[k]))
+  ratio = centers_scale[i,length(ht)]-centers_scale[i,piindex]
+  if(ratio > threshold)
+    strategy = 'long'
+  else if(ratio < -threshold)
+    strategy = 'short'
+  else
+    strategy = 'normal'
+  return(strategy)    
+}
+
+strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,stopratio =2,
+                         profitratio = 1)
+{
+  x = 1:15
+  x = as.vector(scale(x))
+  ht <- seq(min(x), max(x), length.out = 225)
+  points_result = data.frame()
+  for(i in 1:nrow(xx))
+  {
+    start_point = predict_point + 1
+    v = as.numeric(xx[i,])
+    day = xx_dcast[i,]$day  
+    tmp = tryCatch(predict_center(v,centers,centers_scale,predict_point,ht,x,F),error=function(e) e)
+    if(inherits(tmp, "error")) next
+    center_pr = tmp
+    strategy = center_strategy(centers_scale,center_pr,ht,predict_point,threshold=threshold)
+    if(strategy == 'normal') next
+    
+    day_data = data[day]
+    open = as.numeric(day_data[1,]$Open)
+    
+    op = as.numeric(day_data[start_point,]$Open)
+    cl = as.numeric(day_data[15,]$Close)
+    
+    hi = max(as.numeric(day_data[start_point:15,]$High))
+    low = min(as.numeric(day_data[start_point:15,]$Low))
+    
+    sd = sd(as.numeric(day_data[1:predict_point,]$Close))
+    atr = as.numeric(ATR(HLC(day_data[1:predict_point,]),n=5)$atr)
+    
+    atr = round(atr[length(atr)])
+    sd = round(sd)
+    
+    var = sd
+    
+    stop_long = round(op - stopratio*var)
+    stop_short = round(op + stopratio*var)
+    profit_long = round(op + profitratio*var)
+    profit_short = round(op - profitratio*var)
+    
+    type = 'normal'
+    
+    for(j in start_point:15)
+    {
+      curbar = day_data[j,]
+      
+      curhigh = as.numeric(curbar$Close)
+      curlow = as.numeric(curbar$Close)
+      
+      if(strategy == 'short' && curhigh >= stop_short)
+      {
+        cl = curhigh
+        type = 'stopshort'
+        break
+      }
+      else if(strategy == 'short' && curlow <= profit_short)
+      {
+        cl = curlow
+        type = 'profitshort'
+        break
+      }
+      else if(strategy == 'long' && curlow <= stop_long)
+      {
+        cl = curlow
+        type = 'stoplong'
+        break
+      }
+      else if(strategy == 'long' && curhigh >= profit_long)
+      {
+        cl = curhigh
+        type = 'profitlong'
+        break
+      }    
+    }
+    profit = ifelse(strategy == 'long',(cl-op),(op-cl))
+    r = data.frame(i=i,day=day,center = center_pr,open=open,op=op,hi = hi,low=low,close=cl,profit=profit,atr=atr,strategy=strategy,type=type)
+    points_result = rbind(points_result,r)
+  }
+  return(points_result)
+}
+
+
 run =function()
 {
   dbname ='china_future_ods_m'
@@ -138,142 +254,42 @@ run =function()
     xx_dcast =xx_dcast[-indices,]
   }
   
+  xx_scaled = apply(xx,MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
+  xx_scaled = t(xx_scaled)
   
-  numcol = ncol(xx)
-  point_total = xx[,1:numcol]
-  point_total_ratio_up = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})
-  point_total_ratio_down = apply(point_total,2,function(x){sum(x<0)/sum(x!=0)})
+  result = transform_bs(xx_scaled,df=7)
   
-  result = cluster(xx,num_centers,seed=seed)
-  centers = result[['centers']]
-  labels = result[['labels']]
+  n = 15
+  set.seed(1234)
+  clust = pam(result,n)
+  centers_index = clust$id.med
+  centers_scale = result[centers_index,]
+  labels = clust$clustering
   
+  centers = xx[centers_index,]
   
-  xx_dcast = flat_time_data(data,diffclose=F,freq=freq)
-  xx = xx_dcast[,2:ncol(xx_dcast)]
+ windows(3000,3000)
+ x = 1:15
+ x = as.vector(scale(x))
+ ht <- seq(min(x), max(x), length.out = 225)
+ p =par(mfrow=c(3,5))
+ for(i in 1:n)
+ {
+   plot(ht,centers_scale[i,])
+ }
 
-  numcol = ncol(xx)
-  point_total = xx[,1:numcol]
-  point_total_ratio_up_op = apply(point_total,2,function(x){sum(x>0)/sum(x!=0)})
-  point_total_ratio_down_op = apply(point_total,2,function(x){sum(x<0)/sum(x!=0)})
+    points_result = strategy_test(xx,centers,centers_scale,predict_point=9,threshold=0.5,stopratio =5,
+                             profitratio = 5)
+    
+  profit = points_result$profit
+  sum(profit)
+  length(profit)
+  length(profit[profit>0])/length(profit)
+  aggregate(profit,by = list(points_result$center),sum)
   
-  result = cluster(xx,num_centers,seed=seed) 
-  centers_op = result[['centers']]
-  labels_op = result[['labels']]
-  
-  
-  k = 9#length(v1)
-  
-  dt_diffclose = basic_stats(xx,num_centers=num_centers,k=k,centers=centers,labels=labels)
-  dt_dc = dt_diffclose[[1]]
-  dt_dc_sep = dt_diffclose[[2]]
-  
-  good_dt = subset(dt_dc, dt_dc$uppvalue < 0.05 )# & dt_dc$count > 100)
-   
-  dt_open = basic_stats(xx,num_centers=num_centers,k=k,centers=centers_op,labels=labels_op)
-  dt_op = dt_open[[1]]
-  dt_op_sep = dt_open[[2]]
-  
-  #获取实时数据并计算    
-  pricedata = getWindData()
-  y = diff(pricedata$close)
-  y[1] = (pricedata[1,]$close - pricedata[1,]$open)
-  v1 = as.numeric(y8k786.f)
-  
-  y = pricedata$close - pricedata$open
-  v2 = as.numeric(y)
-  predict_center(v1,centers,k)
-  predict_center(v2,centers_op,k)
-  
+  aggregate(profit,by = list(points_result$center),function(x){return(c(length(x[x>0])/length(x)))})
+  aggregate(profit,by = list(points_result$center),function(x){return(length(x))})
   
 }
 
-strategy_test = function()
-{
-  record = data.frame()
-  k = 9 
-  prlabels = apply(xx,MARGIN = 1,predict_center,centers,centers_scale,k=9,x,ht)
-  long_data_label = which(prlabels == 6)
-  days = as.character(xx_dcast[long_data_label,1])
-  
-  stop_point = 15
-  profit_point = 15
-  
-  type = 'long'
-  for(day in days)
-  {
-    dayinfo = data[day]
-    
-    info = dayinfo[(k+1),]
-    open_price = as.numeric(info$Open)
-    
-    open_time = as.character(index(info))
-    
-    stop_price = open_price - stop_point
-    profit_price = open_price + profit_point
-    
-    clear_out = F
-    for(i in (k+1) : nrow(dayinfo))
-    {
-      currentbar = dayinfo[i,]
-      high = as.numeric(currentbar$High)
-      low = as.numeric(currentbar$Low)
-      open = as.numeric(currentbar$Open)
-      close = as.numeric(currentbar$Close)
-      
-      time = as.character(index(currentbar))
-      
-      #止损
-      if(low < stop_price)
-      {
-        out = stop_price
-        clear_out = T
-        cleartime = time
-        break
-      }
-      #止盈
-      if(high > profit_price)
-      {
-        out = profit_price
-        clear_out = T
-        cleartime = time
-        break
-      }
-        
-    }
-    #是否定时出场
-    if(!clear_out)
-    {
-      out = close
-      cleartime = time
-    }
-    
-    r = data.frame(opentime=open_time,open=open_price,cleartime=cleartime,close=out,type = type)
-    record = rbind(record,r)
-  }
-  
-  record$profit = record$close - record$open 
-  sum(record$profit)
-  sum(record$profit > 0) /length(record$profit)
-  
-  
-  xx_scaled = apply(xx,MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
-  xx_scaled = t(xx_scaled)
-  d = dist(xx_scaled,function(x,y){return(hausdorff_dist(x,y))})
-  d = dist(xx_scaled,function(x,y){d=dtw(x,y) 
-                                   return(d$distance)})
-  d = dist(xx_scaled)
-  d = dist(xx_scaled[1:100,],function(x,y){#x1 = matrix(c(1:15,x),ncol=2)
-                                   #y1 = matrix(c(1:15,y),ncol=2)
-                                   return(frechet_diss(x,y))})
-  Sys.time()
-  d = as.matrix(d)
-  
-  n = 15
-  clust = pam(d,n,diss=T)
-  centers_index = clust$id.med
-  centers = xx_scaled[centers_index,]
-  labels = clust$clustering
-  
-  }
 
