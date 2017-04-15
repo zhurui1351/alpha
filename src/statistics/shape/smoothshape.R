@@ -1,44 +1,5 @@
-xx_scaled = apply(xx,MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
-xx_scaled = t(xx_scaled)
-#bline regression
-index = 1:15
-x = 1:15
-x = as.vector(scale(x))
-x = x[index]
-nsample =780
-
-y=xx_scaled[nsample,index]
-fm = lm(y ~ bs(x, df = 5))
-ht <- seq(min(x), max(x), length.out = 200)
-
-plot(x,xx_scaled[nsample,])    
-lines(ht, predict(fm, data.frame(x = ht)))
-
-#x = scale(x)
-lm = lm(y~x)
-lines(ht, predict(lm, data.frame(x = ht)))
-
-index = 1:9
-x = x[index]
-y=xx_scaled[nsample,index]
-
-fm_predict = lm(y ~ bs(x, df = 5))
-fm_predict_value = predict(fm_predict, data.frame(x = x))
-
-ht <- seq(min(x), max(x), length.out = 200)
-lines(ht, predict(fm_predict, data.frame(x = ht)))
-
-lm_predict = lm(y~x)
-lm_predict_value = predict(lm_predict, data.frame(x = x))
-
-lines(ht, predict(lm_predict, data.frame(x = ht)))
-
-diff_cross = fm_predict_value - lm_predict_value 
-
-ang = atan(lm_predict$coefficients[2])/pi * 180
-deriv_n = (predict(fm_predict, data.frame(x = max(x)+0.001)) - predict(fm_predict, data.frame(x = max(x))))/0.001
-
-is_spoonshape(diff_cross)
+#ang = atan(lm_predict$coefficients[2])/pi * 180
+#deriv_n = (predict(fm_predict, data.frame(x = max(x)+0.001)) - predict(fm_predict, data.frame(x = max(x))))/0.001
 
 
 is_spoonshape = function(points)
@@ -77,45 +38,7 @@ for(i in 1 : nrow(xx_scaled))
 }
 
 
-for( i in 1:n)
-{
-  class_n =  xx_dcast[which(labels == i),]
-  
-  days = class_n[,'day']
-  
-  points = sapply(days,function(d){
-    
-    day_data = data[d]
-    op = as.numeric(day_data[10,]$Open)
-    cl = as.numeric(day_data[15,]$Close)
-    gap = cl - op
-    return(gap)
-  }
-  )
-  print(i)
-  print(sum(points))
-  print(length(points))
-  print(length(points[points>0]))
-}
 
-
-
-n =  100
-start = 1000
-v = as.numeric(Cl(data))
-v1 = v[(start+1):(start+n)]
-ht = seq(1,n,length.out=n*5)
-plot(v1)
-y = v1
-x = 1:n
-fm = lm(y~bs(x,df=5))
-lines(ht,predict(fm,data.frame(x=ht)))
-
-fm1 = lm(y~bs(x,df=3))
-lines(ht,predict(fm1,data.frame(x=ht)),col='red')
-
-fm2 = lm(y~bs(x,df=10))
-lines(ht,predict(fm2,data.frame(x=ht)),col='blue')
 
 within = function(value,limit,ratio)
 {

@@ -2,6 +2,27 @@ source('src/config/include.R',encoding='utf-8')
 sourceDir('src/dw/interface')
 source('src/dw/collectdata/collectfromwind.R')
 sourceDir('src/algorithm')
+
+get_splines_sep = function(freq=15,n=225)
+{
+  x = 1:freq
+  x = as.vector(scale(x))
+  ht <- seq(min(x), max(x), length.out = n)
+  return(list(x,ht))
+}
+
+plot_centers = function(centers_scale)
+{
+  windows(3000,3000)
+  x = 1:15
+  x = as.vector(scale(x))
+  ht <- seq(min(x), max(x), length.out = 225)
+  p =par(mfrow=c(3,5))
+  for(i in 1:n)
+  {
+    plot(ht,centers_scale[i,])
+  }
+}
 flat_time_data = function(data,diffclose='cl',freq=15)
 {
   time = as.character(index(data))
@@ -36,9 +57,41 @@ flat_time_data = function(data,diffclose='cl',freq=15)
   
 }
 
-
-predict_center = function(v,centers,centers_scale,k=10,ht,x,isplot = F)
+train_svm = function(xx,labels,k)
 {
+  scaled = apply(xx[,1:k],MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
+  scaled = t(scaled)
+  ll = as.factor(labels)
+  all = data.frame(scaled,ll)
+  all = na.omit(all)
+  
+  ll = all[,ncol(all)]
+  scaled = all[,1:(ncol(all)-1)]
+  m = svm(scaled,ll)
+  
+  l = predict(m)
+  print(sum(l == ll)/length(l))
+  return(m)
+}
+
+
+predict_center_svm = function(m,v,k=9,isstrategy = F)
+{
+  v_scale = scale(v[1:k])
+  center = predict(m,as.data.frame(t(v_scale)))
+  if(isstrategy)
+    print(center_strategy(centers_scale,center,k,threshold=0.5))
+  return(center)
+  
+}
+
+predict_center = function(v,centers,centers_scale,k=9,isplot = F)
+{
+  v = as.numeric(v)
+  x = 1:15
+  x = as.vector(scale(x))
+  ht <- seq(min(x), max(x), length.out = 225)
+  
   vv = x[k]
   ht_pre = ht[ht<=vv]
   kl = length(ht_pre)
@@ -76,44 +129,26 @@ predict_center = function(v,centers,centers_scale,k=10,ht,x,isplot = F)
 basic_stats = function(xx,num_centers=15,k=9,centers,labels)
 {
   
-  numcol = ncol(centers)
-  prlabels = apply(xx,MARGIN = 1,predict_center,centers,k)
-   
-  dt_sep = data.frame()
-  dt = data.frame()
-  for( i in 1:num_centers)
+  prlabels = c()
+  num = c()
+  for(i in 1:nrow(xx))
   {
-    cluster_n = i
-    index = which(prlabels == cluster_n)
-    label_data = xx[index,]
-    count = length(index)
-    point = label_data[,(k+1):numcol]
-    
-    point_col_sum = apply(point,2,sum)
-    point_col_ratio = apply(point,2,function(x){sum(x>0)/sum(x!=0)})
-    
-    point_col_sum = cbind(as.data.frame(t(point_col_sum)))
-    point_col_ratio = cbind(as.data.frame(t(point_col_ratio)))
-    
-    colnames(point_col_sum) = paste(colnames(point_col_sum),'sum',sep='_')
-    colnames(point_col_ratio) = paste(colnames(point_col_ratio),'ratio',sep='_')
-    point_col = cbind(point_col_ratio,point_col_sum)
-    point_col = cbind(data.frame(center=i,count=count),point_col)
-    dt_sep = rbind(dt_sep,point_col)
-    
-    point_sum = apply(point,1,sum)
-    total = sum(point_sum)
-    
-    upratio = sum(point_sum>0)/sum(point_sum!=0)
-    
-    pvalue = prop.test(count*upratio,count,0.55,alternative='greater')
-    uppvalue = pvalue$p.value
-    
-    
-    r = data.frame(center=i,sum = total,upratio = upratio,count,uppvalue=uppvalue)
-    dt = rbind(dt,r)
+    v = xx[i,]
+    predict_point = 12
+    tmp = tryCatch(predict_center(v,centers,centers_scale,predict_point,F),error=function(e) e)
+    if(inherits(tmp, "error") || length(tmp) == 0 )
+    {
+      num = c(num,i)
+      next
+    }
+    prlabels = c(prlabels,tmp)
   }
+  ll = labels[-num]
+  table(ll,prlabels)
   
+  numcol = ncol(centers)
+  prlabels = apply(xx,MARGIN = 1,predict_center,centers,centers_scale,k=12)
+   
   return(list(dt,dt_sep))  
   
 }
@@ -135,7 +170,7 @@ transform_bs = function(xx_scaled,df=5)
   return(result)
 }
 
-center_strategy = function(centers_scale,i,ht,k,threshold=0.5)
+center_strategy = function(centers_scale,i,k,threshold=0.5)
 {
   strategy = 'normal'
   x = 1:15
@@ -152,7 +187,7 @@ center_strategy = function(centers_scale,i,ht,k,threshold=0.5)
   return(strategy)    
 }
 
-strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,stopratio =2,
+strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,m,stopratio =2,
                          profitratio = 1)
 {
   x = 1:15
@@ -164,10 +199,13 @@ strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,
     start_point = predict_point + 1
     v = as.numeric(xx[i,])
     day = xx_dcast[i,]$day  
-    tmp = tryCatch(predict_center(v,centers,centers_scale,predict_point,ht,x,F),error=function(e) e)
-    if(inherits(tmp, "error")) next
+    #tmp = tryCatch(predict_center(v,centers,centers_scale,predict_point,F),error=function(e) e)
+    
+    tmp = tryCatch(predict_center_svm(m,v,predict_point),error=function(e) e)
+    
+    if(inherits(tmp, "error") || length(tmp) == 0 ) next
     center_pr = tmp
-    strategy = center_strategy(centers_scale,center_pr,ht,predict_point,threshold=threshold)
+    strategy = center_strategy(centers_scale,center_pr,predict_point,threshold=threshold)
     if(strategy == 'normal') next
     
     day_data = data[day]
@@ -198,8 +236,8 @@ strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,
     {
       curbar = day_data[j,]
       
-      curhigh = as.numeric(curbar$Close)
-      curlow = as.numeric(curbar$Close)
+      curhigh = as.numeric(curbar$High)
+      curlow = as.numeric(curbar$Low)
       
       if(strategy == 'short' && curhigh >= stop_short)
       {
@@ -227,22 +265,50 @@ strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,
       }    
     }
     profit = ifelse(strategy == 'long',(cl-op),(op-cl))
-    r = data.frame(i=i,day=day,center = center_pr,open=open,op=op,hi = hi,low=low,close=cl,profit=profit,atr=atr,strategy=strategy,type=type)
+    r = data.frame(i=i,day=day,center = center_pr,open=open,op=op,hi = hi,low=low,close=cl,profit=profit,var=sd,strategy=strategy,type=type)
     points_result = rbind(points_result,r)
   }
   return(points_result)
 }
 
+stat_orgin_centers = function(xx_dcast,k=9,n=15,threshold=0.5)
+{
+  result = data.frame()
+  startpoint = k + 1  
+  for( i in 1:n)
+  {
+    class_n =  xx_dcast[which(labels == i),]
+    
+    days = class_n[,'day']
+    
+    points = sapply(days,function(d){
+      
+      day_data = data[d]
+      op = as.numeric(day_data[startpoint,]$Close)
+      cl = as.numeric(day_data[15,]$Close)
+      gap = cl - op
+      return(gap)
+    }
+    )
+    strategy = center_strategy(centers_scale,i,k,threshold=0.5)
+    
+    totalpoints = sum(points)
+    len = length(points)
+    ratio = length(points[points>0])/length(points)
+    r = data.frame(center=i,strategy=strategy,points=totalpoints,len=len,ratio=ratio)
+    result = rbind(result,r)
+  }
+  return(result)
+}
 
 run =function()
 {
   dbname ='china_future_ods_m'
-  tbname = 'dlcmi'
+  tbname = 'dlami'
   freq = 15
   data = getdata(dbname,tbname,freq)
   
   num_centers = 10
-  seed = 2134
   
   xx_dcast = flat_time_data(data,diffclose='cl',freq=freq)
   xx = xx_dcast[,2:ncol(xx_dcast)] 
@@ -257,7 +323,7 @@ run =function()
   xx_scaled = apply(xx,MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
   xx_scaled = t(xx_scaled)
   
-  result = transform_bs(xx_scaled,df=7)
+  result = transform_bs(xx_scaled,df=5)
   
   n = 15
   set.seed(1234)
@@ -267,18 +333,14 @@ run =function()
   labels = clust$clustering
   
   centers = xx[centers_index,]
+  plot_centers(centers_scale)
+  predict_point = 12
   
- windows(3000,3000)
- x = 1:15
- x = as.vector(scale(x))
- ht <- seq(min(x), max(x), length.out = 225)
- p =par(mfrow=c(3,5))
- for(i in 1:n)
- {
-   plot(ht,centers_scale[i,])
- }
+  stat_orgin_centers(xx_dcast,k=predict_point,n=n,threshold=0.5)
+  
+  m = train_svm(xx,labels,k=predict_point)
 
-    points_result = strategy_test(xx,centers,centers_scale,predict_point=9,threshold=0.5,stopratio =5,
+  points_result = strategy_test(xx,centers,centers_scale,predict_point=predict_point,threshold=0.5,m=m,stopratio =5,
                              profitratio = 5)
     
   profit = points_result$profit
@@ -291,5 +353,6 @@ run =function()
   aggregate(profit,by = list(points_result$center),function(x){return(length(x))})
   
 }
+
 
 
