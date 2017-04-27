@@ -11,17 +11,23 @@ get_splines_sep = function(freq=15,n=225)
   return(list(x,ht))
 }
 
-plot_centers = function(centers_scale)
+plot_centers = function(centers_scale,n=15)
 {
-  windows(3000,3000)
-  x = 1:15
-  x = as.vector(scale(x))
-  ht <- seq(min(x), max(x), length.out = 225)
-  p =par(mfrow=c(3,5))
+  windows(5000,5000)
+  #x = 1:15
+  #x = as.vector(scale(x))
+  #ht <- seq(min(x), max(x), length.out = 225)
+  n_row = round(n/5) + 1
+  p =par(mfrow=c(n_row,5))
+  
   for(i in 1:n)
   {
-    plot(ht,centers_scale[i,])
+    #plot(ht,centers_scale[i,])
+    plot(spline(as.numeric(centers_scale[i,])),type='l')
   }
+  
+  par(p)
+  #plot(spline(as.numeric(h)),type='l')
 }
 flat_time_data = function(data,diffclose='cl',freq=15)
 {
@@ -31,6 +37,7 @@ flat_time_data = function(data,diffclose='cl',freq=15)
   times = get_day_trade_min_series(freq)
   data_open = data[time %in% c('09:00:00'),]
   data_open_votile = (data_open$Close - data_open$Open)
+  data_open_votile_log = log(data_open$Close) - log(data_open$Open)
   if(diffclose == 'cl')
   {
     votile = as.data.frame(data$Close)    
@@ -48,17 +55,32 @@ flat_time_data = function(data,diffclose='cl',freq=15)
   {
     votile = as.data.frame((data$High - data$Low)/2 + data$Low)   
   }
+  else if(diffclose == 'ln')
+  {
+    votile = as.data.frame(diff(log(data$Close)))
+    votile[time %in% c('09:00:00'),] =log(data_open$Close) - log(data_open$Open)
+  }
   colnames(votile) = 'change'
   votile$time = time
   votile$day = as.character(as.Date(rownames(votile)))
   votile = subset(votile,time %in% times)
   xx_dcast = dcast(votile,day ~ time,value.var='change')
+  
+  if(diffclose == 'cl')
+  {
+    xx_dcast$Open = data_open$Open
+    colnames = colnames(xx_dcast)
+    colindex =c(1,length(colnames),2:(length(colnames)-1))
+    xx_dcast = xx_dcast[,colindex]
+  }
+
   return(xx_dcast)
   
 }
 
-train_svm = function(xx,labels,k)
+train_svm = function(xx,labels,k,cross=10)
 {
+  set.seed(1234)
   scaled = apply(xx[,1:k],MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
   scaled = t(scaled)
   ll = as.factor(labels)
@@ -67,7 +89,8 @@ train_svm = function(xx,labels,k)
   
   ll = all[,ncol(all)]
   scaled = all[,1:(ncol(all)-1)]
-  m = svm(scaled,ll)
+  scaled = as.matrix(scaled)
+  m = randomForest(scaled,ll,cross=cross)
   
   l = predict(m)
   print(sum(l == ll)/length(l))
@@ -78,9 +101,11 @@ train_svm = function(xx,labels,k)
 predict_center_svm = function(m,v,k=9,isstrategy = F)
 {
   v_scale = scale(v[1:k])
-  center = predict(m,as.data.frame(t(v_scale)))
-  if(isstrategy)
-    print(center_strategy(centers_scale,center,k,threshold=0.5))
+  v_scale = as.matrix(t(v_scale))
+  
+  center = predict(m,v_scale)
+  #if(isstrategy)
+    #print(center_strategy(centers_scale,center,k,threshold=0.5))
   return(center)
   
 }
@@ -153,16 +178,17 @@ basic_stats = function(xx,num_centers=15,k=9,centers,labels)
   
 }
 
-transform_bs = function(xx_scaled,df=5)
+transform_bs = function(xx_scaled,pointnum=15,interpolation=1,df=5)
 {
   result = data.frame()
-  x = 1:15
-  x = as.vector(scale(x))
-  ht <- seq(min(x), max(x), length.out = 225)
+  x = 1:pointnum
+#  x = as.vector(scale(x))
+  totalpoints = interpolation * pointnum
+  ht <- seq(min(x), max(x), length.out = totalpoints)
   for(i in 1:nrow(xx_scaled))
   {    
     nsample =i   
-    y=xx_scaled[nsample,1:15]
+    y=xx_scaled[nsample,1:pointnum]
     fm = lm(y ~ bs(x, df = df))
     points = predict(fm, data.frame(x = ht))
     result = rbind(result,points)
@@ -173,11 +199,12 @@ transform_bs = function(xx_scaled,df=5)
 center_strategy = function(centers_scale,i,k,threshold=0.5)
 {
   strategy = 'normal'
-  x = 1:15
-  x = as.vector(scale(x))
-  ht <- seq(min(x), max(x), length.out = 225)
-  piindex = max(which(ht<=x[k]))
-  ratio = centers_scale[i,length(ht)]-centers_scale[i,piindex]
+  #x = 1:15
+  #x = as.vector(scale(x))
+  #ht <- seq(min(x), max(x), length.out = 225)
+  #piindex = max(which(ht<=x[k]))
+  piindex = k
+  ratio = centers_scale[i,ncol(centers_scale)]-centers_scale[i,piindex]
   if(ratio > threshold)
     strategy = 'long'
   else if(ratio < -threshold)
@@ -187,15 +214,17 @@ center_strategy = function(centers_scale,i,k,threshold=0.5)
   return(strategy)    
 }
 
-strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,m,stopratio =2,
+strategy_test = function(xx_dcast,xx,centers,centers_scale,predict_point=9,threshold=0.5,m,stopratio =2,
                          profitratio = 1)
 {
-  x = 1:15
-  x = as.vector(scale(x))
-  ht <- seq(min(x), max(x), length.out = 225)
+  print(nrow(xx_dcast))
+  #x = 1:15
+  #x = as.vector(scale(x))
+  #ht <- seq(min(x), max(x), length.out = 225)
   points_result = data.frame()
   for(i in 1:nrow(xx))
   {
+    
     start_point = predict_point + 1
     v = as.numeric(xx[i,])
     day = xx_dcast[i,]$day  
@@ -236,8 +265,8 @@ strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,
     {
       curbar = day_data[j,]
       
-      curhigh = as.numeric(curbar$High)
-      curlow = as.numeric(curbar$Low)
+      curhigh = as.numeric(curbar$Close)
+      curlow = as.numeric(curbar$Close)
       
       if(strategy == 'short' && curhigh >= stop_short)
       {
@@ -271,7 +300,7 @@ strategy_test = function(xx,centers,centers_scale,predict_point=9,threshold=0.5,
   return(points_result)
 }
 
-stat_orgin_centers = function(xx_dcast,k=9,n=15,threshold=0.5)
+stat_orgin_centers = function(xx_dcast,centers_scale,labels,k=9,n=15,threshold=0.5)
 {
   result = data.frame()
   startpoint = k + 1  
@@ -305,13 +334,12 @@ run =function()
 {
   dbname ='china_future_ods_m'
   tbname = 'dlami'
-  freq = 15
+  freq = 5
   data = getdata(dbname,tbname,freq)
-  
-  num_centers = 10
-  
+    
   xx_dcast = flat_time_data(data,diffclose='cl',freq=freq)
   xx = xx_dcast[,2:ncol(xx_dcast)] 
+    
   
   indices = which(apply(xx,MARGIN=1,function(x)(all(as.numeric(x)==x[1]))))
   if(length(indices) > 0 )
@@ -323,24 +351,76 @@ run =function()
   xx_scaled = apply(xx,MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
   xx_scaled = t(xx_scaled)
   
-  result = transform_bs(xx_scaled,df=5)
+  #xx_scaled = xx
   
+  result = transform_bs(xx_scaled,pointnum=15,interpolation=1,df=5)
+  
+  center_set = data.frame()
+  
+  nsampe = 2300#nrow(result)
   n = 15
-  set.seed(1234)
-  clust = pam(result,n)
-  centers_index = clust$id.med
-  centers_scale = result[centers_index,]
-  labels = clust$clustering
   
-  centers = xx[centers_index,]
-  plot_centers(centers_scale)
-  predict_point = 12
+  for(i in 1:1000)
+  {
+    print(i)
+    samples = sample(1:nsampe,2000)
+    #set.seed(1234)  
+    
+    clust = kmeans(result[1:nsampe,],n,iter.max = 1000)
+    centers = clust$centers
+    labels = clust$cluster
+    centers_scale = clust$centers
+    center_set = rbind(center_set,centers)
+  }
   
-  stat_orgin_centers(xx_dcast,k=predict_point,n=n,threshold=0.5)
-  
-  m = train_svm(xx,labels,k=predict_point)
+#   clust = pam(train_xx,n)
+#   centers_index = clust$id.med
+#   centers_scale = result[centers_index,]
+#   labels = clust$clustering
+#   centers = xx[centers_index,]
 
-  points_result = strategy_test(xx,centers,centers_scale,predict_point=predict_point,threshold=0.5,m=m,stopratio =5,
+  train_xx = result[1:nsampe,]
+  
+  
+  set.seed(1234)
+  clust = kmeans(train_xx,n,iter.max = 1000)
+  centers = clust$centers
+  centers_scale = clust$centers
+  labels = clust$cluster
+
+  train_yy = labels
+  train_xx_dcast = xx_dcast[1:nsampe,]
+
+  predict_point = 11
+
+  m = train_svm(train_xx,train_yy,k=predict_point)
+
+
+  #n = 15
+  #set.seed(1234)
+  
+  #clust = pam(result[1:nsampe,],n)
+  #centers_index = clust$id.med
+  #centers_scale = result[centers_index,]
+  #labels = clust$clustering
+  #centers = xx[centers_index,]
+  
+  #clust = kmeans(result[1:nsampe,],n)
+  #centers = clust$centers
+  #centers_scale = clust$centers
+  #labels = clust$cluster
+  
+  plot_centers(centers_scale)
+  
+  
+  
+  stat_orgin_centers(xx_dcast,centers_scale,labels,k=predict_point,n=n,threshold=0.5)
+  
+  
+  end_test = nrow(xx) - nsampe
+  test_xx = xx[(nsampe+1):(nsampe+end_test),]
+  test_xx_dcast = xx_dcast[(nsampe+1):(nsampe+end_test),]
+  points_result = strategy_test(test_xx_dcast,test_xx,centers,centers_scale,predict_point=predict_point,threshold=0.5,m=m,stopratio =5,
                              profitratio = 5)
     
   profit = points_result$profit
