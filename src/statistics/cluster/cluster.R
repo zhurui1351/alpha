@@ -11,7 +11,7 @@ get_splines_sep = function(freq=15,n=225)
   return(list(x,ht))
 }
 
-plot_centers = function(centers_scale,n=15)
+plot_centers = function(centers_scale,n=15,k=9)
 {
   windows(5000,5000)
   #x = 1:15
@@ -24,11 +24,20 @@ plot_centers = function(centers_scale,n=15)
   {
     #plot(ht,centers_scale[i,])
     plot(spline(as.numeric(centers_scale[i,])),type='l')
+    abline(v=k)
   }
   
   par(p)
   #plot(spline(as.numeric(h)),type='l')
+  #windows()
 }
+
+plot_clusters = function(xx_scaled,n)
+{
+  y_max = max(xx)
+  y_min = min(xx)
+}
+
 flat_time_data = function(data,diffclose='cl',freq=15)
 {
   time = as.character(index(data))
@@ -78,7 +87,15 @@ flat_time_data = function(data,diffclose='cl',freq=15)
   
 }
 
-train_svm = function(xx,labels,k,cross=10)
+correct_ratio = function(label,prlabel)
+{
+  tb = table(prlabel,label)
+  tbratio = apply(tb,1,function(x){x/sum(x)})
+  ratio = diag(tbratio)
+  return(ratio)
+}
+
+train_svm = function(xx,labels,k,algorithm=randomForest)
 {
   set.seed(1234)
   scaled = apply(xx[,1:k],MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
@@ -90,10 +107,11 @@ train_svm = function(xx,labels,k,cross=10)
   ll = all[,ncol(all)]
   scaled = all[,1:(ncol(all)-1)]
   scaled = as.matrix(scaled)
-  m = randomForest(scaled,ll,cross=cross)
-  
+  #m = svm(scaled,ll)
+  m = algorithm(scaled,ll)
   l = predict(m)
-  print(sum(l == ll)/length(l))
+  #print(sum(l == ll)/length(l))
+  #print(correct_ratio(ll,l))
   return(m)
 }
 
@@ -104,49 +122,39 @@ predict_center_svm = function(m,v,k=9,isstrategy = F)
   v_scale = as.matrix(t(v_scale))
   
   center = predict(m,v_scale)
-  #if(isstrategy)
-    #print(center_strategy(centers_scale,center,k,threshold=0.5))
+  if(isstrategy)
+    print(center_strategy(centers_scale,center,k,threshold=0.5))
   return(center)
   
 }
 
-predict_center = function(v,centers,centers_scale,k=9,isplot = F)
+predict_center = function(v,centers,k=10,isscalecenter=T,isstrategy = F)
 {
-  v = as.numeric(v)
-  x = 1:15
-  x = as.vector(scale(x))
-  ht <- seq(min(x), max(x), length.out = 225)
+ if(isscalecenter)
+ {
+   sample_centers = apply(centers,MARGIN = 1 ,function(x,k){
+     xv = 1:k
+     y =scale(x[1:k])
+     fm = lm(y ~ bs(xv,df=5))
+     return(predict(fm, data.frame(xv = xv)))
+     
+   },k)
+   sample_centers = t(sample_centers)
+ }
+ else
+ {
+   sample_centers = centers[,1:k]
+ }
   
-  vv = x[k]
-  ht_pre = ht[ht<=vv]
-  kl = length(ht_pre)
-  xv = x[1:k]
   
-  sample_centers = apply(centers,MARGIN = 1 ,function(x,k,xv,ht_pre){
-    y =scale(x[1:k])
-    fm = lm(y ~ bs(xv,df=5))
-    return(predict(fm, data.frame(xv = ht_pre)))
-    
-  },k,xv,ht_pre)
-  sample_centers = t(sample_centers)
+  y1 = as.numeric(scale(v[1:k]))
   
-  y1 = scale(v[1:k])
-  y2 = as.numeric(scale(v))
-  fm_predict = lm(y1 ~ bs(xv, df = 5))
-  fm_predict_value = predict(fm_predict, data.frame(xv = ht_pre))
-  
-  distance = apply(sample_centers,MARGIN = 1 ,function(x,v){dist(rbind(x,v))},fm_predict_value)
+  distance = apply(sample_centers,MARGIN = 1 ,function(x,v){dist(rbind(x,v))},y1)
   min_index = which.min(distance)
-  #print(min_index)
-  if(isplot)
-  {
-    cen = as.numeric(centers_scale[min_index,])
-    windows(500,500)
-    plot(x,c(y2,rep(0,(length(x)-length(y2)))),col = 'blue')
-    lines(ht_pre,fm_predict_value,col='green')
-    lines(ht,cen,col='red')
-  }
-  
+  #print(min_index) 
+ if(isstrategy)
+   print(center_strategy(centers,min_index,k,threshold=0.5))
+ 
   return(min_index)
   
 }
@@ -169,17 +177,19 @@ basic_stats = function(xx,num_centers=15,k=9,centers,labels)
     prlabels = c(prlabels,tmp)
   }
   ll = labels[-num]
-  table(ll,prlabels)
   
   numcol = ncol(centers)
   prlabels = apply(xx,MARGIN = 1,predict_center,centers,centers_scale,k=12)
-   
+  
+ # table(ll,prlabels)
+  
   return(list(dt,dt_sep))  
   
 }
 
-transform_bs = function(xx_scaled,pointnum=15,interpolation=1,df=5)
+transform_bs = function(xx_scaled,interpolation=1,df=3)
 {
+  pointnum = ncol(xx_scaled)
   result = data.frame()
   x = 1:pointnum
 #  x = as.vector(scale(x))
@@ -194,6 +204,18 @@ transform_bs = function(xx_scaled,pointnum=15,interpolation=1,df=5)
     result = rbind(result,points)
   }
   return(result)
+}
+
+spline_vector = function(v,interpolation=1,df=5)
+{
+  y = as.numeric(v)
+  pointnum = length(y)
+  x = 1:pointnum
+  totalpoints = interpolation * pointnum
+  ht <- seq(min(x), max(x), length.out = totalpoints)
+  fm = lm(y ~ bs(x, df = df))
+  points = predict(fm, data.frame(x = ht))
+  return(points)
 }
 
 center_strategy = function(centers_scale,i,k,threshold=0.5)
@@ -214,23 +236,30 @@ center_strategy = function(centers_scale,i,k,threshold=0.5)
   return(strategy)    
 }
 
-strategy_test = function(xx_dcast,xx,centers,centers_scale,predict_point=9,threshold=0.5,m,stopratio =2,
-                         profitratio = 1)
+strategy_test = function(xx_dcast,method='svm',isspline=F,xx,centers,predict_point=9,threshold=0.5,m,stopratio =2,
+                         profitratio = 1,df=3,isscalecenter=T)
 {
-  print(nrow(xx_dcast))
-  #x = 1:15
-  #x = as.vector(scale(x))
-  #ht <- seq(min(x), max(x), length.out = 225)
+  #print(nrow(xx_dcast))
   points_result = data.frame()
   for(i in 1:nrow(xx))
   {
     
     start_point = predict_point + 1
     v = as.numeric(xx[i,])
+    if(isspline)
+    {
+      v = spline_vector(v[1:predict_point],df=df)
+      
+    }
     day = xx_dcast[i,]$day  
-    #tmp = tryCatch(predict_center(v,centers,centers_scale,predict_point,F),error=function(e) e)
-    
-    tmp = tryCatch(predict_center_svm(m,v,predict_point),error=function(e) e)
+    if(method=='dist')
+    {
+      tmp = tryCatch(predict_center(v,centers,predict_point,isscalecenter=T,F),error=function(e) e)      
+    }
+    else if(method=='svm')
+    {
+      tmp = tryCatch(predict_center_svm(m,v,predict_point),error=function(e) e)
+    }   
     
     if(inherits(tmp, "error") || length(tmp) == 0 ) next
     center_pr = tmp
@@ -330,16 +359,36 @@ stat_orgin_centers = function(xx_dcast,centers_scale,labels,k=9,n=15,threshold=0
   return(result)
 }
 
+trading_result_analysis = function(points_result)
+{
+  profit = points_result$profit
+  totalprofit = sum(profit)
+  totallen = length(profit)
+  winratio = length(profit[profit>0])/length(profit)
+  result_total = data.frame(profit = totalprofit,len=totallen,winratio=winratio)
+  
+  center_profit = aggregate(profit,by = list(points_result$center),sum)
+  colnames(center_profit) = c('id','profit')
+  center_win_ratio = aggregate(profit,by = list(points_result$center),function(x){return(c(length(x[x>0])/length(x)))})
+  colnames(center_win_ratio) = c('id','winratio')
+  center_len = aggregate(profit,by = list(points_result$center),function(x){return(length(x))})
+  colnames(center_len) = c('id','len')
+  result = merge(merge(center_profit,center_win_ratio),center_len)
+  
+  
+  return(list(result_total,result[order(result$id),]))
+}
+
 run =function()
 {
   dbname ='china_future_ods_m'
   tbname = 'dlami'
-  freq = 5
+  freq = 15
   data = getdata(dbname,tbname,freq)
-    
+  
   xx_dcast = flat_time_data(data,diffclose='cl',freq=freq)
   xx = xx_dcast[,2:ncol(xx_dcast)] 
-    
+  
   
   indices = which(apply(xx,MARGIN=1,function(x)(all(as.numeric(x)==x[1]))))
   if(length(indices) > 0 )
@@ -353,85 +402,61 @@ run =function()
   
   #xx_scaled = xx
   
-  result = transform_bs(xx_scaled,pointnum=15,interpolation=1,df=5)
+  result = transform_bs(xx_scaled,interpolation=1,df=3)
   
   center_set = data.frame()
   
-  nsampe = 2300#nrow(result)
+  nsampe = nrow(xx_scaled)
+  
   n = 15
   
-  for(i in 1:1000)
+  for(i in 1:100)
   {
     print(i)
     samples = sample(1:nsampe,2000)
     #set.seed(1234)  
     
-    clust = kmeans(result[1:nsampe,],n,iter.max = 1000)
-    centers = clust$centers
-    labels = clust$cluster
-    centers_scale = clust$centers
-    center_set = rbind(center_set,centers)
-  }
-  
-#   clust = pam(train_xx,n)
-#   centers_index = clust$id.med
-#   centers_scale = result[centers_index,]
-#   labels = clust$clustering
-#   centers = xx[centers_index,]
-
-  train_xx = result[1:nsampe,]
-  
-  
-  set.seed(1234)
-  clust = kmeans(train_xx,n,iter.max = 1000)
-  centers = clust$centers
-  centers_scale = clust$centers
-  labels = clust$cluster
-
-  train_yy = labels
-  train_xx_dcast = xx_dcast[1:nsampe,]
-
-  predict_point = 11
-
-  m = train_svm(train_xx,train_yy,k=predict_point)
-
-
-  #n = 15
-  #set.seed(1234)
-  
-  #clust = pam(result[1:nsampe,],n)
-  #centers_index = clust$id.med
-  #centers_scale = result[centers_index,]
-  #labels = clust$clustering
-  #centers = xx[centers_index,]
-  
-  #clust = kmeans(result[1:nsampe,],n)
-  #centers = clust$centers
-  #centers_scale = clust$centers
-  #labels = clust$cluster
-  
-  plot_centers(centers_scale)
-  
-  
-  
-  stat_orgin_centers(xx_dcast,centers_scale,labels,k=predict_point,n=n,threshold=0.5)
-  
-  
-  end_test = nrow(xx) - nsampe
-  test_xx = xx[(nsampe+1):(nsampe+end_test),]
-  test_xx_dcast = xx_dcast[(nsampe+1):(nsampe+end_test),]
-  points_result = strategy_test(test_xx_dcast,test_xx,centers,centers_scale,predict_point=predict_point,threshold=0.5,m=m,stopratio =5,
-                             profitratio = 5)
     
-  profit = points_result$profit
-  sum(profit)
-  length(profit)
-  length(profit[profit>0])/length(profit)
-  aggregate(profit,by = list(points_result$center),sum)
-  
-  aggregate(profit,by = list(points_result$center),function(x){return(c(length(x[x>0])/length(x)))})
-  aggregate(profit,by = list(points_result$center),function(x){return(length(x))})
-  
+    #   clust = pam(train_xx,n)
+    #   centers_index = clust$id.med
+    #   centers_scale = result[centers_index,]
+    #   labels = clust$clustering
+    #   centers = xx[centers_index,]
+    
+    train_xx = xx_scaled[samples,]
+    
+    
+    set.seed(1234)
+    clust = kmeans(train_xx,n,iter.max = 1000)
+    centers = clust$centers
+    centers_scale = clust$centers
+    labels = clust$cluster
+    
+    predict_point = 10
+    #plot_centers(centers_scale,n=n,k=predict_point)
+    
+    train_yy = labels
+    train_xx_dcast = xx_dcast[samples,]
+    
+    
+    m = train_svm(train_xx,train_yy,k=predict_point,algorithm=randomForest)
+    
+    
+    #stat_orgin_centers(xx_dcast,centers_scale,labels,k=predict_point,n=n,threshold=0.5)
+    
+    
+    test_xx = xx[-samples,]
+    test_xx_dcast = xx_dcast[-samples,]
+    points_result = strategy_test(test_xx_dcast,method='svm',isspline=F,test_xx,centers,predict_point=predict_point,threshold=0.3,m=m,stopratio =5,
+                                  profitratio = 5,df=3,isscalecenter=F)
+    
+    trading_result = trading_result_analysis(points_result)
+    center_result = trading_result[[2]]
+    satisfied_center = subset(center_result,winratio>0.55 & len>30)
+    satisfied_center = centers[satisfied_center$id,]
+    colnames(satisfied_center) = 1:ncol(centers)
+    center_set = rbind(center_set,satisfied_center)
+  }
 }
 
 
