@@ -13,7 +13,7 @@ get_splines_sep = function(freq=15,n=225)
 
 plot_centers = function(centers_scale,n=15,k=9)
 {
-  windows(5000,5000)
+  windows(1000,1000)
   #x = 1:15
   #x = as.vector(scale(x))
   #ht <- seq(min(x), max(x), length.out = 225)
@@ -375,8 +375,23 @@ trading_result_analysis = function(points_result)
   colnames(center_len) = c('id','len')
   result = merge(merge(center_profit,center_win_ratio),center_len)
   
+  result$ptest = apply(result,1,function(x){p = prop.test(as.numeric(x['winratio']) * as.numeric(x['len']),as.numeric(x['len']),0.55,alternative='greater')
+                               return(p$p.value)})
   
   return(list(result_total,result[order(result$id),]))
+}
+
+
+common_centers = function(center_set,nclust=3)
+{
+  set.seed(1234)
+  clust = pam(set_scaled,nclust)
+  centers_index = clust$id.med
+  centers_scale = set_scaled[centers_index,]
+  labels = clust$clustering
+  centers = set_scaled[centers_index,]
+  plot_centers(centers,nclust)
+  return(centers)
 }
 
 run =function()
@@ -410,18 +425,18 @@ run =function()
   
   n = 15
   
-  for(i in 1:100)
+  turns = 100
+  
+  pre_samples = 1:2000
+  
+  n_satisfied = c()
+  for(i in 1:turns)
   {
     print(i)
     samples = sample(1:nsampe,2000)
     #set.seed(1234)  
-    
-    
-    #   clust = pam(train_xx,n)
-    #   centers_index = clust$id.med
-    #   centers_scale = result[centers_index,]
-    #   labels = clust$clustering
-    #   centers = xx[centers_index,]
+    print(length(intersect(pre_samples,samples)))
+    pre_samples = samples
     
     train_xx = xx_scaled[samples,]
     
@@ -452,11 +467,19 @@ run =function()
     
     trading_result = trading_result_analysis(points_result)
     center_result = trading_result[[2]]
-    satisfied_center = subset(center_result,winratio>0.55 & len>30)
+    satisfied_center = subset(center_result,winratio>0.55 & len>50)
+    if(nrow(satisfied_center) == 0) 
+    {
+      print('fault')
+      next
+    }
+    centers = as.data.frame(centers)
     satisfied_center = centers[satisfied_center$id,]
+    n_satisfied = c(n_satisfied,nrow(satisfied_center))
     colnames(satisfied_center) = 1:ncol(centers)
     center_set = rbind(center_set,satisfied_center)
   }
+  com_centers = common_centers(center_set,nclust=3)
 }
 
 
