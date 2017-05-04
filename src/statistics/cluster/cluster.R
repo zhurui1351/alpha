@@ -382,9 +382,19 @@ trading_result_analysis = function(points_result)
 }
 
 
-common_centers = function(center_set,nclust=3)
+common_centers = function(center_set,nclust=3,isscaled=T)
 {
   set.seed(1234)
+  if(isscaled)
+  {
+    set_scaled = apply(center_set,MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
+    set_scaled = t(set_scaled)
+  }
+  else
+  {
+    set_scaled = center_set
+  }
+  
   clust = pam(set_scaled,nclust)
   centers_index = clust$id.med
   centers_scale = set_scaled[centers_index,]
