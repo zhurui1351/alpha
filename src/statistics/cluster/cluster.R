@@ -382,7 +382,7 @@ trading_result_analysis = function(points_result)
 }
 
 
-common_centers = function(center_set,nclust=3,isscaled=T)
+common_centers = function(center_set,nclust=3,isscaled=T,algo = 'kmeans')
 {
   set.seed(1234)
   if(isscaled)
@@ -394,14 +394,40 @@ common_centers = function(center_set,nclust=3,isscaled=T)
   {
     set_scaled = center_set
   }
+    
   
-  clust = pam(set_scaled,nclust)
-  centers_index = clust$id.med
-  centers_scale = set_scaled[centers_index,]
-  labels = clust$clustering
-  centers = set_scaled[centers_index,]
-  plot_centers(centers,nclust)
+  if(algo=='kmeans')
+  {
+    clust = kmeans(train_xx,nclust,iter.max = 1000)
+    centers = clust$centers
+  }
+  else if(algo=='pam')
+  {
+    clust = pam(set_scaled,nclust)
+    centers_index = clust$id.med
+    centers_scale = set_scaled[centers_index,]
+    labels = clust$clustering
+    centers = set_scaled[centers_index,]
+  }
+
+  plot_centers(centers,nclust) 
   return(centers)
+}
+
+filter_centers = function(com_centers,centers,threshold=0.95)
+{
+  result = c()
+  for(i in 1:nrow(centers))
+  {
+    center = centers[i,]
+    sim = apply(com_centers,MARGIN = 1,function(v,center){return(cor(as.numeric(v),as.numeric(center)))},center)
+    l = length(which(sim >= threshold))
+    if(l > 0)
+    {
+      result = c(result,i)
+    }
+  }
+  return(result)
 }
 
 run =function()
@@ -435,7 +461,7 @@ run =function()
   
   n = 15
   
-  turns = 100
+  turns = 200
   
   pre_samples = 1:2000
   
@@ -477,7 +503,7 @@ run =function()
     
     trading_result = trading_result_analysis(points_result)
     center_result = trading_result[[2]]
-    satisfied_center = subset(center_result,winratio>0.55 & len>50)
+    satisfied_center = subset(center_result,winratio>0.55 & len>50 )
     if(nrow(satisfied_center) == 0) 
     {
       print('fault')
@@ -489,7 +515,8 @@ run =function()
     colnames(satisfied_center) = 1:ncol(centers)
     center_set = rbind(center_set,satisfied_center)
   }
-  com_centers = common_centers(center_set,nclust=3)
+  com_centers = common_centers(center_set,nclust=3,algo='kmeans')
+  filter_centers(com_centers,centers,threshold=0.9)
 }
 
 
