@@ -472,7 +472,7 @@ run =function()
   data = getdata(dbname,tbname,freq)
   
   all_year = unique(substring(as.character(index(data)),1,4))
-  test_year = c('2015')
+  test_year = c('2014')
   train_year = setdiff(all_year,test_year)
   
   train_data = data[train_year]
@@ -551,22 +551,23 @@ run =function()
   
   #get best train center
   clust_train = kmeans(train_xx,n,iter.max = 1000)
-  centers_train = clust$centers
-  labels_train = clust$cluster
+  centers_train = clust_train$centers
+  labels_train = clust_train$cluster
     
   train_yy = labels_train  
   train_m = train_svm(train_xx,train_yy,k=predict_point,algorithm=randomForest)
   
-  train_centers = filter_centers(com_centers,centers_train,threshold=0.9)
+  train_centers = filter_centers(com_centers,centers_train,threshold=0.8)
   #test
   xx_dcast_for_test = flat_time_data(test_data,diffclose='cl',freq=freq)
   xx_dcast_for_test = filter_invalid_data(xx_dcast_for_test)
-  xx_for_test = xx_dcast[,2:ncol(xx_dcast_for_test)] 
+  xx_for_test = xx_dcast_for_test[,2:ncol(xx_dcast_for_test)] 
   
   points_result_test = strategy_test(xx_dcast_for_test,method='svm',isspline=F,xx_for_test,centers,predict_point=predict_point,threshold=0.3,m=m,stopratio =5,
                                 profitratio = 5,df=3,isscalecenter=F)
   
   
+  trading_result_test = trading_result_analysis(points_result_test)
   
 }
 
