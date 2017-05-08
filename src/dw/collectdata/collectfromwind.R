@@ -22,7 +22,7 @@ trading_intraday = function()
     w.start()
   }
   
-  date = as.character(Sys.Date())
+  date = as.character(Sys.Date()-7)
   opentime = paste(date,'09:00:00',sep=' ')
   closetime = paste(date,'15:15:00',sep=' ')
   

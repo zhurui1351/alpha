@@ -430,34 +430,67 @@ filter_centers = function(com_centers,centers,threshold=0.95)
   return(result)
 }
 
-run =function()
+filter_invalid_data = function(xx_dcast)
 {
-  dbname ='china_future_ods_m'
-  tbname = 'dlami'
-  freq = 15
-  data = getdata(dbname,tbname,freq)
-  
-  xx_dcast = flat_time_data(data,diffclose='cl',freq=freq)
   xx = xx_dcast[,2:ncol(xx_dcast)] 
-  
   
   indices = which(apply(xx,MARGIN=1,function(x)(all(as.numeric(x)==x[1]))))
   if(length(indices) > 0 )
   {
-    xx=xx[-indices,]
     xx_dcast =xx_dcast[-indices,]
   }
-  
-  xx_scaled = apply(xx,MARGIN=1,function(x){return(rbind(as.numeric(scale(as.numeric(x)))))})
+  return(xx_dcast)
+}
+
+if_else = function(cond,v1,v2)
+{
+  if(cond)
+    return(v1)
+  else
+    return(v2)
+}
+
+scale_data = function(xx,func = scale)#identity返回
+{
+  xx_scaled = apply(xx,MARGIN=1,function(x){return(rbind(as.numeric(func(as.numeric(x)))))})
   xx_scaled = t(xx_scaled)
+  return(xx_scaled)
+}
+
+
+check_invalid_days = function(xx_dcast)
+{
+    days = substring(xx_dcast$day,1,4)
+    return(aggregate(days,by=list(days),length))
+}
+
+run =function()
+{
+  dbname ='china_future_ods_m'
+  tbname = 'dlcmi'
+  freq = 15
+  data = getdata(dbname,tbname,freq)
   
-  #xx_scaled = xx
+  all_year = unique(substring(as.character(index(data)),1,4))
+  test_year = c('2015')
+  train_year = setdiff(all_year,test_year)
   
-  result = transform_bs(xx_scaled,interpolation=1,df=3)
+  train_data = data[train_year]
+  test_data = if_else(length(test_year) == 0,data[0,],data[test_year])
+  
+  train_xx_dcast = flat_time_data(train_data,diffclose='cl',freq=freq)
+  train_xx_dcast = filter_invalid_data(train_xx_dcast)
+  train_xx = train_xx_dcast[,2:ncol(train_xx_dcast)] 
+  
+  #check_invalid_days(train_xx_dcast)
+  
+  train_xx_scaled = scale_data(train_xx,func = scale)
+  
+  result = transform_bs(train_xx_scaled,interpolation=1,df=3)
   
   center_set = data.frame()
   
-  nsampe = nrow(xx_scaled)
+  nsampe = nrow(train_xx_scaled)
   
   n = 15
   
@@ -474,11 +507,11 @@ run =function()
     print(length(intersect(pre_samples,samples)))
     pre_samples = samples
     
-    train_xx = xx_scaled[samples,]
+    train_xx_for_train = train_xx_scaled[samples,]
     
     
     set.seed(1234)
-    clust = kmeans(train_xx,n,iter.max = 1000)
+    clust = kmeans(train_xx_for_train,n,iter.max = 1000)
     centers = clust$centers
     centers_scale = clust$centers
     labels = clust$cluster
@@ -486,19 +519,17 @@ run =function()
     predict_point = 10
     #plot_centers(centers_scale,n=n,k=predict_point)
     
-    train_yy = labels
-    train_xx_dcast = xx_dcast[samples,]
+    train_yy_for_train = labels
+    train_xx_dcast_for_train = train_xx_dcast[samples,]
     
     
-    m = train_svm(train_xx,train_yy,k=predict_point,algorithm=randomForest)
-    
+    m = train_svm(train_xx_for_train,train_yy_for_train,k=predict_point,algorithm=randomForest)
     
     #stat_orgin_centers(xx_dcast,centers_scale,labels,k=predict_point,n=n,threshold=0.5)
     
-    
-    test_xx = xx[-samples,]
-    test_xx_dcast = xx_dcast[-samples,]
-    points_result = strategy_test(test_xx_dcast,method='svm',isspline=F,test_xx,centers,predict_point=predict_point,threshold=0.3,m=m,stopratio =5,
+    test_xx_for_train = train_xx[-samples,]
+    test_xx_dcast_for_train = train_xx_dcast[-samples,]
+    points_result = strategy_test(test_xx_dcast_for_train,method='svm',isspline=F,test_xx_for_train,centers,predict_point=predict_point,threshold=0.3,m=m,stopratio =5,
                                   profitratio = 5,df=3,isscalecenter=F)
     
     trading_result = trading_result_analysis(points_result)
@@ -515,8 +546,28 @@ run =function()
     colnames(satisfied_center) = 1:ncol(centers)
     center_set = rbind(center_set,satisfied_center)
   }
-  com_centers = common_centers(center_set,nclust=3,algo='kmeans')
-  filter_centers(com_centers,centers,threshold=0.9)
+  com_centers = common_centers(center_set,nclust=3,algo='pam')
+  
+  
+  #get best train center
+  clust_train = kmeans(train_xx,n,iter.max = 1000)
+  centers_train = clust$centers
+  labels_train = clust$cluster
+    
+  train_yy = labels_train  
+  train_m = train_svm(train_xx,train_yy,k=predict_point,algorithm=randomForest)
+  
+  train_centers = filter_centers(com_centers,centers_train,threshold=0.9)
+  #test
+  xx_dcast_for_test = flat_time_data(test_data,diffclose='cl',freq=freq)
+  xx_dcast_for_test = filter_invalid_data(xx_dcast_for_test)
+  xx_for_test = xx_dcast[,2:ncol(xx_dcast_for_test)] 
+  
+  points_result_test = strategy_test(xx_dcast_for_test,method='svm',isspline=F,xx_for_test,centers,predict_point=predict_point,threshold=0.3,m=m,stopratio =5,
+                                profitratio = 5,df=3,isscalecenter=F)
+  
+  
+  
 }
 
 
