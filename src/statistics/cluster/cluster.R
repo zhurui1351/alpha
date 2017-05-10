@@ -563,7 +563,7 @@ run =function()
   xx_dcast_for_test = filter_invalid_data(xx_dcast_for_test)
   xx_for_test = xx_dcast_for_test[,2:ncol(xx_dcast_for_test)] 
   
-  points_result_test = strategy_test(xx_dcast_for_test,method='svm',isspline=F,xx_for_test,centers,predict_point=predict_point,threshold=0.3,m=train_m,stopratio =5,
+  points_result_test = strategy_test(xx_dcast_for_test,method='svm',isspline=F,xx_for_test,centers_train,predict_point=predict_point,threshold=0.3,m=train_m,stopratio =5,
                                 profitratio = 5,df=3,isscalecenter=F)
   
   
