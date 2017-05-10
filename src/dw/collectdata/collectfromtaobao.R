@@ -106,6 +106,7 @@ collectdatafromtaobao = function(path,pattern = 'DLAMI*')
       daytime = substring(index(dayprice),12)
       #默认排好序
       missingtime = setdiff(basetime,daytime)
+      #print(missingtime)
       for (mt in missingtime)
       {
         i = which(basetime == mt)
@@ -115,7 +116,7 @@ collectdatafromtaobao = function(path,pattern = 'DLAMI*')
         }
         if(i == 0 )
         {
-          j = length(daytime)
+          j = 1 #length(daytime)
         }
         else
         {
@@ -173,20 +174,25 @@ collectdatafromtaobao = function(path,pattern = 'DLAMI*')
       for (mt in missingtime)
       {
         i = which(basetime == mt)
+        mps = 0
+        starti = i
         while (!is.element(basetime[i],daytime) && i > 0 )
         {
           i = i - 1
+          mps = mps + 1
         }
         if(i == 0 )
         {
-          j = length(daytime)
+          j = 1#length(daytime)
+          
+          mps = starti -  which(basetime == daytime[1])
         }else
         {
           j = which(daytime == basetime[i])
         }
         missp = dayprice[j]
         
-        whichday = substring(as.character(index(missp)),1,10)
+        whichday = substring(as.character(index(missp) + mps*60),1,10)
         index(missp) = as.POSIXct(paste(whichday,mt))
         missp$High = missp$Open
         missp$Low = missp$Open
@@ -234,7 +240,7 @@ collectdatafromtaobao = function(path,pattern = 'DLAMI*')
         }
         if(i == 0 )
         {
-          j = length(daytime)
+          j = 1#length(daytime)
         }else
         {
           j = which(daytime == basetime[i])

@@ -467,7 +467,7 @@ check_invalid_days = function(xx_dcast)
 run =function()
 {
   dbname ='china_future_ods_m'
-  tbname = 'dlcmi'
+  tbname = 'dlami'
   freq = 15
   data = getdata(dbname,tbname,freq)
   
@@ -484,7 +484,7 @@ run =function()
   
   #check_invalid_days(train_xx_dcast)
   
-  train_xx_scaled = scale_data(train_xx,func = scale)
+  #train_xx_scaled = scale_data(train_xx,func = scale)
   
   result = transform_bs(train_xx_scaled,interpolation=1,df=3)
   
@@ -508,10 +508,10 @@ run =function()
     pre_samples = samples
     
     train_xx_for_train = train_xx_scaled[samples,]
-    
+    train_xx_for_train_scaled = scale_data(train_xx_for_train,func = scale)
     
     set.seed(1234)
-    clust = kmeans(train_xx_for_train,n,iter.max = 1000)
+    clust = kmeans(train_xx_for_train_scaled,n,iter.max = 1000)
     centers = clust$centers
     centers_scale = clust$centers
     labels = clust$cluster
@@ -523,7 +523,7 @@ run =function()
     train_xx_dcast_for_train = train_xx_dcast[samples,]
     
     
-    m = train_svm(train_xx_for_train,train_yy_for_train,k=predict_point,algorithm=randomForest)
+    m = train_svm(train_xx_for_train_scaled,train_yy_for_train,k=predict_point,algorithm=randomForest)
     
     #stat_orgin_centers(xx_dcast,centers_scale,labels,k=predict_point,n=n,threshold=0.5)
     
@@ -550,21 +550,21 @@ run =function()
   
   
   #get best train center
-  clust_train = kmeans(train_xx,n,iter.max = 1000)
+  clust_train = kmeans(train_xx_scaled,n,iter.max = 1000)
   centers_train = clust_train$centers
   labels_train = clust_train$cluster
     
   train_yy = labels_train  
   train_m = train_svm(train_xx,train_yy,k=predict_point,algorithm=randomForest)
   
-  train_centers = filter_centers(com_centers,centers_train,threshold=0.8)
+  train_centers = filter_centers(com_centers,centers_train,threshold=0.85)
   #test
   xx_dcast_for_test = flat_time_data(test_data,diffclose='cl',freq=freq)
   xx_dcast_for_test = filter_invalid_data(xx_dcast_for_test)
   xx_for_test = xx_dcast_for_test[,2:ncol(xx_dcast_for_test)] 
   
-  points_result_test = strategy_test(xx_dcast_for_test,method='svm',isspline=F,xx_for_test,centers,predict_point=predict_point,threshold=0.3,m=m,stopratio =5,
-                                profitratio = 5,df=3,isscalecenter=F)
+  points_result_test = strategy_test(xx_dcast_for_test,method='svm',isspline=F,xx_for_test,centers,predict_point=predict_point,threshold=0.3,m=train_m,stopratio =5,
+                                profitratio = 2,df=3,isscalecenter=F)
   
   
   trading_result_test = trading_result_analysis(points_result_test)

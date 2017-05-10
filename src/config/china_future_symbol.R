@@ -17,4 +17,4 @@ soybean_oil = list(contract=c('dly01','dly03','dly05','dly07','dly08','dly09','d
 
 
 #china_future_symbols = list('corp'=corp,'soybean_a'=soybean_a,'soybean_b'=soybean_b,'soyabean_meal'=soyabean_meal)
-china_future_symbols = list('soybean_oil'=soybean_oil)
+china_future_symbols = list('soybean_a'=soybean_a)
