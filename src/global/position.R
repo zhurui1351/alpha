@@ -5,7 +5,7 @@ Position = R6Class('Position',
                      
                      add = function(trade)
                      {
-                       self$tradeset = append(self$tradesset,trade)
+                       self$tradeset = append(self$tradeset,trade)
                      },
                      
                     update = function(d,state=NULL,...)
@@ -13,6 +13,7 @@ Position = R6Class('Position',
                       trades = self$tradeset
                       len = length(trades)
                       removeset = c()
+                      flag = F
                       
                       if(len == 0)
                         return(T)

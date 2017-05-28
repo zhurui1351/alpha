@@ -1,8 +1,8 @@
 source('src/config/include.R',encoding='utf-8')
-sourceDir('src/dw/interface')
-source('src/dw/collectdata/collectfromwind.R')
-sourceDir('src/algorithm')
-source('src/strategy/shock/nbarclass.R')
+sourceDir('src/dw/interface',encoding='utf-8')
+source('src/dw/collectdata/collectfromwind.R',encoding='utf-8')
+sourceDir('src/algorithm',encoding='utf-8')
+source('src/strategy/shock/nbarclass.R',encoding='utf-8')
 
 
 nbarframework = function()
@@ -14,14 +14,14 @@ nbarframework = function()
   orgin_data = getdata(dbname,tbname,freq)
   data = orgin_data
   
-  data$sma = lag(SMA(data$Close,20),1)
-  data = na.omit(data)
+  #data$sma = lag(SMA(data$Close,20),1)
+  #data = na.omit(data)
   
   nbarstate = NbarState$new()
   position = Position$new()  
   
   winpoint = 20
-  losspoint = 15
+  losspoint = 25
   
   for(i in 1:nrow(data))
   {
