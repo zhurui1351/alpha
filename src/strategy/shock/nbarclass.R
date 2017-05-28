@@ -69,7 +69,7 @@ nbar_strategy = function(d,position,nbarstate)
   {
     #openbuy()
     stoploss = open - point
-    stopwin = open + point
+    stopwin = open + point + 5
     r = data.frame(opentime=time,closetime=NA,open=open,close=NA,stopwin=stopwin,stoploss=stoploss,type='long',exittype='')
     trade = Trade$new(r,stopwin=defaultstopwin,stoploss=defaultstoploss)
     position$add(trade)
@@ -79,7 +79,7 @@ nbar_strategy = function(d,position,nbarstate)
   {
     #opensell()
     stoploss = open + point
-    stopwin = open - point
+    stopwin = open - point - 5
     r = data.frame(opentime=time,closetime=NA,open=open,close=NA,stopwin=stopwin,stoploss=stoploss,type='short',exittype='')
     trade = Trade$new(r,stopwin=defaultstopwin,stoploss=defaultstoploss)
     position$add(trade)
