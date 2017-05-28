@@ -59,25 +59,31 @@ NbarState = R6Class('nbarstate',
                       
                       ))
 
-nbar_strategy = function()
+nbar_strategy = function(d,position,nbarstate)
 {
-  d
+  point = 5
   time = as.character(index(d))
   open = as.numeric(d$Open)
   
   if(nbarstate$upcount == 3)
   {
     #openbuy()
-    r = data.frame(opentime=time,closetime=NA,open=open,close=NA,stopwin=NA,stoploss=NA,type='long')
-    
+    stoploss = open - point
+    stopwin = open + point
+    r = data.frame(opentime=time,closetime=NA,open=open,close=NA,stopwin=stopwin,stoploss=stoploss,type='long',exittype='')
+    trade = Trade$new(r,stopwin=defaultstopwin,stoploss=defaultstoploss)
+    position$add(trade)
   }
   
   if(nbarstate$downcount ==3)
   {
     #opensell()
-    r = data.frame(opentime=time,closetime=NULL,open=open,close=null,stopwin=null,stoploss=null,type='long')
-    
+    stoploss = open + point
+    stopwin = open - point
+    r = data.frame(opentime=time,closetime=NA,open=open,close=NA,stopwin=stopwin,stoploss=stoploss,type='short',exittype='')
+    trade = Trade$new(r,stopwin=defaultstopwin,stoploss=defaultstoploss)
+    position$add(trade)
   }
-
+  return(position)
 }
 

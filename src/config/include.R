@@ -26,5 +26,8 @@ sourceDir <- function(path, trace = TRUE, ...) {
 source('src/config/db_config.R',encoding='utf-8')
 source('src/config/china_future_symbol.R',encoding='utf-8')
 sourceDir('src/utilities',encoding='utf-8')
+sourceDir('src/global')
+sourceDir('src/position')
+sourceDir('src/analysis')
 
 options(scipen =200)

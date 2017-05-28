@@ -10,7 +10,7 @@ nbarframework = function()
   
   dbname ='china_future_ods_m'
   tbname = 'dlami'
-  freq = 15
+  freq = 5
   orgin_data = getdata(dbname,tbname,freq)
   data = orgin_data
   
@@ -19,10 +19,11 @@ nbarframework = function()
   
   for(i in 1:nrow(data))
   {
+    print(i)
     d = data[i,]
     
-    notifyposition()
-    nbarstate$update(d)
-    
+    position = nbar_strategy(d,position,nbarstate)
+    position$update(d,nbarstate)
+    nbarstate$update(d)   
   }
 }
