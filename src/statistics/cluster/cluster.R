@@ -478,13 +478,19 @@ run =function()
   train_data = data[train_year]
   test_data = if_else(length(test_year) == 0,data[0,],data[test_year])
   
-  train_xx_dcast = flat_time_data(train_data,diffclose='cl',freq=freq)
+  ########
+  train_xx_dcast = flat_time_data(train_data,diffclose='diffcl',freq=freq)
   train_xx_dcast = filter_invalid_data(train_xx_dcast)
   train_xx = train_xx_dcast[,2:ncol(train_xx_dcast)] 
+  
+  train_xx_dcast_center = flat_time_data(train_data,diffclose='cl',freq=freq)
+  train_xx_dcast_center = filter_invalid_data(train_xx_dcast_center)
+  train_xx_center = train_xx_dcast_center[,2:ncol(train_xx_dcast_center)] 
   
   #check_invalid_days(train_xx_dcast)
   
   train_xx_scaled = scale_data(train_xx,func = scale)
+  train_xx_center_scaled = scale_data(train_xx_center,func = scale)
   
   result = transform_bs(train_xx_scaled,interpolation=1,df=3)
   
@@ -494,9 +500,9 @@ run =function()
   
   n = 15
   
-  turns = 200
+  turns = 100
   
-  pre_samples = 1:2000
+ # pre_samples = 1:2000
   
   n_satisfied = c()
   for(i in 1:turns)
@@ -504,10 +510,10 @@ run =function()
     print(i)
     samples = sample(1:nsampe,2000)
     #set.seed(1234)  
-    print(length(intersect(pre_samples,samples)))
-    pre_samples = samples
+    #print(length(intersect(pre_samples,samples)))
+    #pre_samples = samples
     
-    train_xx_for_train = train_xx[samples,]
+    train_xx_for_train = train_xx_center[samples,]
     train_xx_for_train_scaled = scale_data(train_xx_for_train,func = scale)
     
     set.seed(1234)
@@ -523,9 +529,9 @@ run =function()
     train_xx_dcast_for_train = train_xx_dcast[samples,]
     
     
-    m = train_svm(train_xx_for_train_scaled,train_yy_for_train,k=predict_point,algorithm=randomForest)
+    m = train_svm(train_xx_dcast_for_train,train_yy_for_train,k=predict_point,algorithm=randomForest)
     
-    #stat_orgin_centers(xx_dcast,centers_scale,labels,k=predict_point,n=n,threshold=0.5)
+    #stat_orgin_centers(train_xx_dcast_for_train,centers,labels,k=predict_point,n=n,threshold=0.5)
     
     test_xx_for_train = train_xx[-samples,]
     test_xx_dcast_for_train = train_xx_dcast[-samples,]
@@ -550,6 +556,7 @@ run =function()
   
   
   #get best train center
+  set.seed(1234)
   clust_train = kmeans(train_xx_scaled,n,iter.max = 1000)
   centers_train = clust_train$centers
   labels_train = clust_train$cluster
@@ -557,7 +564,7 @@ run =function()
   train_yy = labels_train  
   train_m = train_svm(train_xx,train_yy,k=predict_point,algorithm=randomForest)
   
-  train_centers = filter_centers(com_centers,centers_train,threshold=0.9)
+  train_centers = filter_centers(com_centers,centers_train,threshold=0.85)
   #test
   xx_dcast_for_test = flat_time_data(test_data,diffclose='cl',freq=freq)
   xx_dcast_for_test = filter_invalid_data(xx_dcast_for_test)
