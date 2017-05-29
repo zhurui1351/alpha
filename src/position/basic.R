@@ -1,4 +1,4 @@
-defaultstoploss = function(r,d,state)
+defaultstoploss = function(r,d,state=NULL)
 {
   stoploss = r$stoploss
   type = r$type
@@ -32,7 +32,7 @@ defaultstoploss = function(r,d,state)
   return(result)
 }
 
-defaultstopwin = function(r,d,state)
+defaultstopwin = function(r,d,state=NULL)
 {
   stopwin = r$stopwin
   type = r$type

@@ -18,18 +18,23 @@ Trade = R6Class('Trade',
                      {
                        r = self$record
                        flag = F
-                       if(!is.null(self$stoploss))
+                       
+                       if(!is.null(self$stopwin) )
+                       {
+                         result = self$stopwin(r,d,state)
+                         self$record = result[['r']]
+                         flag = result[['flag']]
+                       } 
+                       
+                       if(!is.null(self$stoploss) && flag == F  )
                        {
                          result = self$stoploss(r,d,state)
                          self$record = result[['r']]
                          flag = result[['flag']]
                        }
-                        if(!is.null(self$stopwin) && flag == F)
-                       {
-                         result = self$stopwin(r,d,state)
-                         self$record = result[['r']]
-                         flag = result[['flag']]
-                       }                       
+                       
+                      
+                                             
                         if(!is.null(self$normalexit) && flag == F)
                        {
                          result = self$normalexit(r,d,state)

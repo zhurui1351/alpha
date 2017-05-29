@@ -20,20 +20,23 @@ nbarframework = function()
   nbarstate = NbarState$new()
   position = Position$new()  
   
-  winpoint = 30
-  losspoint = 35
+  winpoint = 25
+  losspoint = 25
+  n = 4
   
   for(i in 1:nrow(data))
   {
     #print(i)
     d = data[i,]
     
-    position = nbar_strategy(d,position,nbarstate,losspoint=losspoint,winpoint=winpoint)
+    position = nbar_strategy(d,position,nbarstate,losspoint=losspoint,winpoint=winpoint,n=n)
     position$update(d,nbarstate)
     nbarstate$update(d)   
   }
+  
+  records = position$records
+  basic_analysis(records)
 }
 
-records = position$records
-basic_analysis(records)
+
 

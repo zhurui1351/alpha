@@ -59,14 +59,14 @@ NbarState = R6Class('nbarstate',
                       
                       ))
 
-nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10)
+nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10,n=3)
 {
   time = as.character(index(d))
   open = as.numeric(d$Open)
   sma = as.numeric(d$sma)
   curpostion = position
   
-  if(nbarstate$upcount == 3 )
+  if(nbarstate$upcount == n )
   {
     #openbuy()
     stoploss = open - losspoint 
@@ -77,7 +77,7 @@ nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10)
     
   }
   
-  if(nbarstate$downcount == 3 )
+  if(nbarstate$downcount == n )
   {    
     #opensell()
     
