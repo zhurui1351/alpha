@@ -59,31 +59,37 @@ NbarState = R6Class('nbarstate',
                       
                       ))
 
-nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10,n=3)
+nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10,n=3,pred)
 {
   time = as.character(index(d))
   open = as.numeric(d$Open)
   sma = as.numeric(d$sma)
   curpostion = position
+  high = as.numeric(d$High)
+  low = as.numeric(d$Low)
   
-  if(nbarstate$upcount == n )
+  prehigh = as.numeric(pred$High)
+  prelow = as.numeric(pred$Low)
+  
+  if(nbarstate$upcount == n && high > prehigh)
   {
     #openbuy()
+    op = ifelse(open > prehigh,open,prehigh)
     stoploss = open - losspoint 
     stopwin = open + winpoint 
-    r = data.frame(opentime=time,closetime=NA,open=open,close=NA,stopwin=stopwin,stoploss=stoploss,type='long',exittype='')
+    r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=stopwin,stoploss=stoploss,type='long',exittype='')
     trade = Trade$new(r,stopwin=defaultstopwin,stoploss=defaultstoploss)
     curpostion$add(trade)
     
   }
   
-  if(nbarstate$downcount == n )
+  if(nbarstate$downcount == n && low < prelow )
   {    
     #opensell()
-    
+    op = ifelse(open < prelow,open,prelow)
     stoploss = open + losspoint 
     stopwin = open - winpoint
-    r = data.frame(opentime=time,closetime=NA,open=open,close=NA,stopwin=stopwin,stoploss=stoploss,type='short',exittype='')
+    r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=stopwin,stoploss=stoploss,type='short',exittype='')
     trade = Trade$new(r,stopwin=defaultstopwin,stoploss=defaultstoploss)
     curpostion$add(trade)
   }
