@@ -32,7 +32,7 @@ find_bottom = function(ds)
   
 }
 
-openstratyge = function(d,position,pred,losspoint=10,winpoint=10)
+openstratyge = function(d,position,pred,losspoint=10,winpoint=10,n=0)
 {
   time = as.character(index(d))
   opentime = as.character(index(d))
@@ -42,8 +42,8 @@ openstratyge = function(d,position,pred,losspoint=10,winpoint=10)
   
   curpostion = position
  # print(curpostion)
-  prehigh = find_top(pred)
-  prelow = find_bottom(pred)
+  prehigh = find_top(pred) + n 
+  prelow = find_bottom(pred) - n
   
   high = as.numeric(d$High)
   low = as.numeric(d$Low)
@@ -85,8 +85,8 @@ openshockframework = function()
   
   position = Position$new()  
   
-  winpoint = 15
-  losspoint = 15
+  winpoint = 5
+  losspoint = 5
   pred = data[(1:n),]
   
   for(i in (n+1):nrow(data))
