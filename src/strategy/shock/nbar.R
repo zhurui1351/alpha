@@ -9,7 +9,7 @@ nbarframework = function()
 {
   
   dbname ='china_future_ods_m'
-  tbname = 'dlcmi'
+  tbname = 'dlami'
   freq = 15
   orgin_data = getdata(dbname,tbname,freq)
   data = orgin_data
@@ -20,8 +20,8 @@ nbarframework = function()
   nbarstate = NbarState$new()
   position = Position$new()  
   
-  winpoint = 10
-  losspoint = 10
+  winpoint = 20
+  losspoint = 20
   n = 3
   
   pred = data[1,]
