@@ -8,7 +8,7 @@ Position = R6Class('Position',
                        self$tradeset = append(self$tradeset,trade)
                      },
                      
-                    update = function(d,state=NULL,...)
+                    update = function(d,state=NULL,iswinfirst=T,...)
                     {
                       trades = self$tradeset
                       len = length(trades)
@@ -20,7 +20,7 @@ Position = R6Class('Position',
                       for(i in 1:len)
                       {
                         trade = trades[[i]]
-                        flag = trade$update(d,state,...)
+                        flag = trade$update(d,state,iswinfirst,...)
                         if(flag)
                         {
                           removeset = c(removeset,i)
