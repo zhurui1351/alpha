@@ -19,6 +19,11 @@ MarketMaStatus = R6Class('MarketMaStatus',
                              self$upcount = self$upcount+1
                              self$downcount = 0
                              
+                             if(self$status == 'down')
+                             {
+                              self$status = 'osi_down'  
+                             }
+                             
                              if(self$upcount >= 5)
                              {
                                self$status = 'up'
@@ -28,6 +33,11 @@ MarketMaStatus = R6Class('MarketMaStatus',
                            {
                              self$upcount = 0
                              self$downcount = self$downcount + 1
+                             
+                             if(self$status == 'up')
+                             {
+                               self$status = 'osi_up'  
+                             }
                              
                              if(self$downcount >= 5)
                              {
@@ -81,4 +91,5 @@ mabandframework = function()
     r = data.frame(time = index(d),status=status)
     allstatus = rbind(allstatus,r)
   }
+  allstatus = xts(allstatus$status,order.by=allstatus$time)
 }
