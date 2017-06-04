@@ -7,6 +7,7 @@ basic_analysis = function(records)
   anual_profit = aggregate(records$profit,by=list(years),sum)
   aggregate(records$profit,by=list(years),length)
   print(sum(profit))
+  print(nrow(records))
   print(win_ratio)
   print(anual_profit)
 }

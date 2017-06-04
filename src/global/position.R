@@ -31,6 +31,12 @@ Position = R6Class('Position',
                       stayset = setdiff(1:len,removeset)
                       self$tradeset = self$tradeset[stayset]
                       return(T)
+                    },
+                    getRecords = function()
+                    {
+                      records = self$records
+                      records = xts(records,as.POSIXct(records$opentime,format = '%Y-%m-%d %H:%M:%S'))
+                      return(records)
                     }
                    )
                    )
