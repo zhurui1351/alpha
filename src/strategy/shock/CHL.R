@@ -99,7 +99,7 @@ CHLframework = function()
   chl_status$downlimit = -100
   position = Position$new()  
   
-  winpoint = 20
+  winpoint = 15
   losspoint = 15
   pren = 3
   
@@ -116,5 +116,6 @@ CHLframework = function()
   }
   
   records = position$records
+  #records = position$getRecords()
   basic_analysis(records)
 }
