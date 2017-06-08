@@ -16,6 +16,8 @@ nbarframework = function()
   
   #data$sma = lag(SMA(data$Close,20),1)
   #data = na.omit(data)
+  data$atr = ATR(data,10)$atr
+  data = na.omit(data)
   
   nbarstate = NbarState$new()
   position = Position$new()  
@@ -31,16 +33,16 @@ nbarframework = function()
   {
     #print(i)
     d = data[i,]
+    atr = floor(as.numeric(d$atr))
+    
+   # winpoint = atr
+   # losspoint = atr
     
     position = nbar_strategy(d,position,nbarstate,losspoint=losspoint,winpoint=winpoint,n=n,pred)
     position$update(d,nbarstate,iswinfirst=T)
     nbarstate$update(d)   
     pred = data[(i-pren+1):i,]
   }
-  
   records = position$records
   basic_analysis(records)
 }
-
-
-

@@ -87,6 +87,7 @@ CHLframework = function()
   
   data = orgin_data
   cci = CCI(data$Cl,10)
+  cci = SMA(na.omit(cci),3)
   atr = ATR(data,10)
   atr = atr$atr
   
@@ -95,12 +96,12 @@ CHLframework = function()
   data = na.omit(data)
   
   chl_status = CHL_status$new()
-  chl_status$uplimit = 100
-  chl_status$downlimit = -100
+  chl_status$uplimit = 80
+  chl_status$downlimit = -80
   position = Position$new()  
   
-  winpoint = 15
-  losspoint = 15
+  winpoint = 20
+  losspoint = 20
   pren = 3
   
   pred = data[1:pren,]
@@ -110,7 +111,7 @@ CHLframework = function()
     d = data[i,]
     
     position = CHL_strategy(d,position,pred,chl_status,losspoint=losspoint,winpoint=winpoint,n=0)
-    position$update(d,NULL,iswinfirst=T)
+    position$update(d,NULL,iswinfirst=F)
     chl_status$update(d)   
     pred = data[(i-pren+1):i,]
   }

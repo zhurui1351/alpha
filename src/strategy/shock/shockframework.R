@@ -20,7 +20,6 @@ judege_time = function(datetime,expectedtime)
   else
     return(F)
 }
-
 find_top = function(ds)
 {
   return(max(as.numeric(ds$High)))
