@@ -16,32 +16,34 @@ nbarframework = function()
   
   #data$sma = lag(SMA(data$Close,20),1)
   #data = na.omit(data)
-  data$atr = ATR(data,10)$atr
-  data = na.omit(data)
+  #data$atr = ATR(data,10)$atr
+  #data = na.omit(data)
   
   nbarstate = NbarState$new()
   position = Position$new()  
   
-  winpoint = 15
-  losspoint = 15
+  #winpoint = 15
+  #losspoint = 15
   n = 3
   
   pren = 1
   pred = data[1:pren,]
   
-  for(i in (pren+1):nrow(data))
+  prepeakn = 4
+  predpeak = data[1:prepeakn,]
+  
+  for(i in (prepeakn+1):nrow(data))
   {
     #print(i)
+    state = list(nbstate =nbarstate,pred = predpeak )
     d = data[i,]
-    atr = floor(as.numeric(d$atr))
+    #atr = floor(as.numeric(d$atr))
     
-   # winpoint = atr
-   # losspoint = atr
-    
-    position = nbar_strategy(d,position,nbarstate,losspoint=losspoint,winpoint=winpoint,n=n,pred)
-    position$update(d,nbarstate,iswinfirst=T)
+    position = nbar_strategy(d,position,nbarstate,losspoint=NA,winpoint=NA,n=n,pred)
+    position$update(d,state,iswinfirst=T)
     nbarstate$update(d)   
     pred = data[(i-pren+1):i,]
+    predpeak = data[(i-prepeakn+1):i,]
   }
   records = position$records
   basic_analysis(records)

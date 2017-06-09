@@ -26,6 +26,7 @@ Position = R6Class('Position',
                           removeset = c(removeset,i)
                           self$records = rbind(self$records,trade$record)
                         }
+                      
                       }
                       
                       stayset = setdiff(1:len,removeset)

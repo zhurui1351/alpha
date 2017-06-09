@@ -19,6 +19,13 @@ Trade = R6Class('Trade',
                        r = self$record
                        flag = F
                        
+                       if(!is.null(self$movestop) )
+                       {
+                         r = self$movestop(r,d,state)
+                         self$record = r
+                         
+                       }
+                       
                        if(iswinfirst)
                        {
                          if(!is.null(self$stopwin) )
@@ -60,11 +67,7 @@ Trade = R6Class('Trade',
                          flag = result[['flag']]
                          
                        }
-                        if(!is.null(self$movestop) && flag == F)
-                       {
-                         self$movestop(r,d,state)
-                         
-                       }
+               
                        
                        return(flag)
                      }
