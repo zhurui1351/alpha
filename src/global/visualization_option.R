@@ -38,7 +38,7 @@ posiont_tooltip = gsub('\n','',posiont_tooltip)
   stock = data
   stock$sma10 = SMA(Cl(stock),10)
   stock$cci = CCI(HLC(stock),10)
-  stock = na.omit(stock)
+  #stock = na.omit(stock)
   dates = as.character(index(stock))
   
   data = as.data.frame(OHLC(stock))

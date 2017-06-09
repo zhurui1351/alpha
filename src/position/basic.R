@@ -13,7 +13,7 @@ defaultstoploss = function(r,d,state=NULL)
     if(low <= stoploss)
     {
       newr$closetime = time
-      newr$close = low #stoploss
+      newr$close = low#stoploss
       newr$exittype = 'longloss'
       flag = T
     }
@@ -23,7 +23,7 @@ defaultstoploss = function(r,d,state=NULL)
     if(high >= stoploss)
     {
       newr$closetime = time
-      newr$close = high # stoploss
+      newr$close =  high#stoploss
       newr$exittype = 'shortloss'
       flag = T
     }
@@ -79,11 +79,11 @@ moveStopByPrePeak = function(r,d,state)
   
   if(type == 'long')
   {
-    r$stoploss = line - 2
+    r$stoploss = line - 1
   }
   else if(type == 'short')
   {
-    r$stoploss = line + 2
+    r$stoploss = line + 1
   }
   
   return(r)

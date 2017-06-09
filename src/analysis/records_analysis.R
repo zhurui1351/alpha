@@ -15,7 +15,7 @@ basic_analysis = function(records)
   #aggregate(records$profit,by=list(years),length)
   anual_record$trueprofit = anual_record$profit - anual_record$len*0.8 - anual_record$len
   anual_record$virtualprofit = anual_record$profit - anual_record$len*0.8 
-  print(sum(profit))
+  print(sum(anual_record$virtualprofit))
   print(nrow(records))
   print(win_ratio)
   print(anual_record)

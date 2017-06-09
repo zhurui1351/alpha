@@ -29,7 +29,7 @@ nbarframework = function()
   pren = 1
   pred = data[1:pren,]
   
-  prepeakn = 4
+  prepeakn = 15
   predpeak = data[1:prepeakn,]
   
   for(i in (prepeakn+1):nrow(data))

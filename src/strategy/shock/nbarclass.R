@@ -34,8 +34,8 @@ nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10,n=3,pred)
   high = as.numeric(d$High)
   low = as.numeric(d$Low)
   
-  prehigh = max(as.numeric(pred$High)) 
-  prelow = min(as.numeric(pred$Low)) 
+  prehigh = max(as.numeric(pred$High))+1 
+  prelow = min(as.numeric(pred$Low))-1
   
   if(nbarstate$upcount == n && high > prehigh)
   {
