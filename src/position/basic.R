@@ -99,19 +99,16 @@ MoveFixPoints =  R6Class('MoveFixPoints',
                            },
                            update = function(r,d,state=NULL)
                            {
-                             
                              open = r$open
                              type = r$type
                              profit_long = self$barstate$curhigh - open 
                              profit_short = open - self$barstate$curlow
-                             
-                             
                              if(type == 'long')
                              {
                                if(profit_long>10)
                                {
                                  r$stoploss = open
-                                 r$stoploss = r$stoploss + profit_long-9
+                                 r$stoploss = r$stoploss + profit_long-10
                                  
                                }
                                
@@ -122,7 +119,7 @@ MoveFixPoints =  R6Class('MoveFixPoints',
                                if(profit_short>10)
                                {
                                  r$stoploss = open
-                                 r$stoploss = r$stoploss - profit_short + 9                 
+                                 r$stoploss = r$stoploss - profit_short + 10               
                               }                             
                              }
                              self$barstate$update(d)
