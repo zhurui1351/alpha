@@ -2,8 +2,8 @@ defaultstoploss = function(r,d,state=NULL)
 {
   stoploss = r$stoploss
   type = r$type
-  high = as.numeric(d$High)
-  low = as.numeric(d$Low)
+  high = as.numeric(d$High) #as.numeric(d$Close)
+  low = as.numeric(d$Low)#as.numeric(d$Close)
   time = as.character(index(d))
   
   newr = r 
@@ -13,7 +13,7 @@ defaultstoploss = function(r,d,state=NULL)
     if(low <= stoploss)
     {
       newr$closetime = time
-      newr$close = low#stoploss
+      newr$close = stoploss#stoploss
       newr$exittype = 'longloss'
       flag = T
     }
@@ -23,7 +23,7 @@ defaultstoploss = function(r,d,state=NULL)
     if(high >= stoploss)
     {
       newr$closetime = time
-      newr$close =  high#stoploss
+      newr$close =  stoploss#stoploss
       newr$exittype = 'shortloss'
       flag = T
     }
@@ -79,11 +79,38 @@ moveStopByPrePeak = function(r,d,state)
   
   if(type == 'long')
   {
-    r$stoploss = line - 1
+    r$stoploss = prelow-1
   }
   else if(type == 'short')
   {
-    r$stoploss = line + 1
+    r$stoploss = prehigh + 1
+  }
+  
+  return(r)
+}
+
+moveStopFixPoints = function(r,d,state)
+{
+  type = r$type
+  stoploss = r$stoploss
+  high = as.numeric(d$High)
+  low = as.numeric(d$Low)
+  op = as.numeric(d$Open)
+
+  profit_long = high - op
+  profit_short = op - low
+  
+  if(type == 'long')
+  {
+    if(low <= stoploss)
+      return(r)
+    r$stoploss = r$stoploss + ifelse(profit_long>10,(profit_long-10),0)
+  }
+  else if(type == 'short')
+  {
+    if(high >= stoploss)
+      return(r)
+    r$stoploss =  r$stoploss - ifelse(profit_short>10,(profit_short-10),0)
   }
   
   return(r)

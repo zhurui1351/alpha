@@ -21,6 +21,7 @@ Trade = R6Class('Trade',
                        
                        if(!is.null(self$movestop) )
                        {
+                         #print('move')
                          r = self$movestop(r,d,state)
                          self$record = r
                          

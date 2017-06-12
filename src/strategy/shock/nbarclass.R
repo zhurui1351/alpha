@@ -37,14 +37,18 @@ nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10,n=3,pred)
   prehigh = max(as.numeric(pred$High))+1 
   prelow = min(as.numeric(pred$Low))-1
   
+  #line = trunc((prehigh+prelow)/2)
+ # line = 15
+  
   if(nbarstate$upcount == n && high > prehigh)
   {
     #openbuy()
     op = ifelse(open > prehigh,open,prehigh)
-    stoploss = prelow# op - losspoint 
+    op = op + 1
+    stoploss = op - losspoint  #op - losspoint##prelow# op - losspoint 
     stopwin = op + winpoint 
-    r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=NA,stoploss=NA,type='long',exittype='')
-    trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=moveStopByPrePeak)
+    r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=stopwin,stoploss=stoploss,type='long',exittype='')
+    trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=moveStopFixPoints)
     curpostion$add(trade)
     
   }
@@ -53,10 +57,11 @@ nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10,n=3,pred)
   {    
     #opensell()
     op = ifelse(open < prelow,open,prelow)
-    stoploss = prehigh#op + losspoint 
+    op = op - 1
+    stoploss = op + losspoint#op + losspoint#line+1#prehigh#op + losspoint 
     stopwin = op - winpoint
-    r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=NA,stoploss=NA,type='short',exittype='')
-    trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=moveStopByPrePeak)
+    r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=stopwin,stoploss=stoploss,type='short',exittype='')
+    trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=moveStopFixPoints)
     curpostion$add(trade)
   }
   return(curpostion)

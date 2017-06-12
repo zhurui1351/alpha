@@ -1,6 +1,11 @@
 
 
-
+readtestdata = function()
+{
+  testdata = read.csv('d:/testbar.csv')
+  testdata = xts(testdata[,2:7],order.by=as.POSIXct(testdata$date))
+  return(testdata)
+}
 
 vis_bar = function(data)
 {
