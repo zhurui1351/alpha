@@ -19,14 +19,6 @@ Trade = R6Class('Trade',
                        r = self$record
                        flag = F
                        
-                       if(!is.null(self$movestop) )
-                       {
-                         #print('move')
-                         r = self$movestop(r,d,state)
-                         self$record = r
-                         
-                       }
-                       
                        if(iswinfirst)
                        {
                          if(!is.null(self$stopwin) )
@@ -41,6 +33,14 @@ Trade = R6Class('Trade',
                            result = self$stoploss(r,d,state)
                            self$record = result[['r']]
                            flag = result[['flag']]
+                           
+                           if(!is.null(self$movestop) )
+                           {
+                             #print('move')
+                             r = self$movestop$update(self$record,d,state)
+                             self$record = r
+                             
+                           }
                          }
                          
                        }
@@ -52,6 +52,14 @@ Trade = R6Class('Trade',
                            result = self$stoploss(r,d,state)
                            self$record = result[['r']]
                            flag = result[['flag']]
+                           
+                           if(!is.null(self$movestop) )
+                           {
+                             #print('move')
+                             r = self$movestop$update(self$record,d,state)
+                             self$record = r
+                             
+                           }
                          }
                          if(!is.null(self$stopwin)  && flag == F )
                          {

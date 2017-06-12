@@ -1,4 +1,25 @@
 
+EveryBarState = R6Class('EveryBarState',
+                        public = list(
+                          curhigh = -Inf,
+                          curlow = Inf,
+                          #newhighflag = F
+                          update = function(d)
+                          {
+                            high = as.numeric(d$High)
+                            low = as.numeric(d$Low)
+                            if(high > self$curhigh)
+                            {
+                              self$curhigh = high
+                            }
+                            if(low < self$curlow)
+                            {
+                              self$curlow = low
+                            }
+                            
+                          }
+                          )
+                        )
 
 NbarState = R6Class('nbarstate',
                     public=list(
@@ -42,13 +63,15 @@ nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10,n=3,pred)
   
   if(nbarstate$upcount == n && high > prehigh)
   {
+    barstate = EveryBarState$new()
+    movefixpoints = MoveFixPoints$new(barstate)
     #openbuy()
     op = ifelse(open > prehigh,open,prehigh)
     op = op + 1
     stoploss = op - losspoint  #op - losspoint##prelow# op - losspoint 
     stopwin = op + winpoint 
     r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=stopwin,stoploss=stoploss,type='long',exittype='')
-    trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=moveStopFixPoints)
+    trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=movefixpoints)
     curpostion$add(trade)
     
   }
@@ -56,12 +79,15 @@ nbar_strategy = function(d,position,nbarstate,losspoint=10,winpoint=10,n=3,pred)
   if(nbarstate$downcount == n && low < prelow )
   {    
     #opensell()
+    barstate = EveryBarState$new()
+    movefixpoints = MoveFixPoints$new(barstate)
+    
     op = ifelse(open < prelow,open,prelow)
     op = op - 1
     stoploss = op + losspoint#op + losspoint#line+1#prehigh#op + losspoint 
     stopwin = op - winpoint
     r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=stopwin,stoploss=stoploss,type='short',exittype='')
-    trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=moveStopFixPoints)
+    trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=movefixpoints)
     curpostion$add(trade)
   }
   return(curpostion)

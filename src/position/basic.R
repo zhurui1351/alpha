@@ -89,29 +89,45 @@ moveStopByPrePeak = function(r,d,state)
   return(r)
 }
 
-moveStopFixPoints = function(r,d,state)
-{
-  type = r$type
-  stoploss = r$stoploss
-  high = as.numeric(d$High)
-  low = as.numeric(d$Low)
-  op = as.numeric(d$Open)
 
-  profit_long = high - op
-  profit_short = op - low
-  
-  if(type == 'long')
-  {
-    if(low <= stoploss)
-      return(r)
-    r$stoploss = r$stoploss + ifelse(profit_long>10,(profit_long-10),0)
-  }
-  else if(type == 'short')
-  {
-    if(high >= stoploss)
-      return(r)
-    r$stoploss =  r$stoploss - ifelse(profit_short>10,(profit_short-10),0)
-  }
-  
-  return(r)
-}
+MoveFixPoints =  R6Class('MoveFixPoints',
+                         public = list(
+                           barstate = NULL,
+                           initialize = function(barstate)
+                           {
+                             self$barstate = barstate
+                           },
+                           update = function(r,d,state=NULL)
+                           {
+                             
+                             open = r$open
+                             type = r$type
+                             profit_long = self$barstate$curhigh - open 
+                             profit_short = open - self$barstate$curlow
+                             
+                             
+                             if(type == 'long')
+                             {
+                               if(profit_long>10)
+                               {
+                                 r$stoploss = open
+                                 r$stoploss = r$stoploss + profit_long-10
+                                 
+                               }
+                               
+                             }
+                             else if(type == 'short')
+                             {
+                               
+                               if(profit_short>10)
+                               {
+                                 r$stoploss = open
+                                 r$stoploss = r$stoploss - profit_short + 10                  
+                              }                             
+                             }
+                             self$barstate$update(d)
+                             return(r)
+                           }
+                           )
+                         
+                         )
