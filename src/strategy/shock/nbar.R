@@ -39,7 +39,7 @@ nbarframework = function()
     d = data[i,]
     #atr = floor(as.numeric(d$atr))
     
-    position = nbar_strategy(d,position,nbarstate,losspoint=losspoint,winpoint=winpoint,n=n,pred)
+    position = nbar_strategy(d,position,nbarstate,losspoint=losspoint,winpoint=winpoint,n=n,predpeak)
     position$update(d,state,iswinfirst=T)
     nbarstate$update(d)   
     pred = data[(i-pren+1):i,]
