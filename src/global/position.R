@@ -38,6 +38,7 @@ Position = R6Class('Position',
                       records = self$records
                       profit = ifelse(records$type == 'long',(records$close - records$open),(records$open - records$close))
                       records$exittype = ifelse(profit>0,'win','loss')
+                      records$profit = profit
                       records = xts(records,as.POSIXct(records$opentime,format = '%Y-%m-%d %H:%M:%S'))
                       return(records)
                     }
