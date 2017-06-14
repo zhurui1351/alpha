@@ -67,6 +67,41 @@ defaultstopwin = function(r,d,state=NULL)
   
 }
 
+stoplossbycci = function(r,d,state=NULL)
+{
+  stoploss = r$stoploss
+  type = r$type
+  pred = state
+  precci = as.numeric(pred$cci)
+  
+  op = as.numeric(d$Open)
+  
+  newr = r 
+  flag = F
+  if(type == 'long')
+  {
+    if(precci < 100)
+    {
+      newr$closetime = time
+      newr$close = op#stoploss
+      newr$exittype = 'longloss'
+      flag = T
+    }
+  }
+  else if(type == 'short')
+  {
+    if(precci >= -100)
+    {
+      newr$closetime = time
+      newr$close =  op#stoploss
+      newr$exittype = 'shortloss'
+      flag = T
+    }
+  }
+  result = list(flag = flag,r = newr)
+  return(result)
+}
+
 moveStopByPrePeak = function(r,d,state)
 {
   pred = state[['pred']]
