@@ -33,12 +33,12 @@ axisPointer_formatter = JS("function (params) {
                            ")
 axisPointer_formatter = gsub('\n','',axisPointer_formatter)
 
-posiont_tooltip = JS("function (pos, params, el, elRect, size) {
+posiont_tooltip = JS("function(pos, params, el, elRect, size) {
                      var obj = {top: 10};
                      obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
                      return obj;
                      }")
-posiont_tooltip = gsub('\n','',posiont_tooltip)
+posiont_tooltip = gsub('\n',' ',posiont_tooltip)
 
   stock = data
   stock$sma10 = SMA(Cl(stock),10)
@@ -53,7 +53,7 @@ posiont_tooltip = gsub('\n','',posiont_tooltip)
   data = as.matrix(data)
   xx = apply(data,1,as.list)
   ma = as.numeric(stock$sma10)
-  cci = as.numeric(stock$cci)
+  cci = ma#as.numeric(stock$cci)
   
   
   option = list(
@@ -67,6 +67,7 @@ posiont_tooltip = gsub('\n','',posiont_tooltip)
     tooltip= list(
       trigger= 'axis',
       axisPointer= list(
+        animation = F,
         type= 'cross'
       ),
       backgroundColor= 'rgba(245, 245, 245, 0.8)',
@@ -76,7 +77,7 @@ posiont_tooltip = gsub('\n','',posiont_tooltip)
       textStyle= list(
         color= '#000'
       ),
-      position = posiont_tooltip,
+      #position = posiont_tooltip,
       extraCssText= 'width= 170px'
     ),
     axisPointer= list(
@@ -135,17 +136,18 @@ posiont_tooltip = gsub('\n','',posiont_tooltip)
         gridIndex= 1,
         data= dates,#data.categoryData,
         scale= T,
-        boundaryGap = F,
-        axisLine= list(onZero= F),
-        axisTick= list(show= F),
-        splitLine= list(show= F),
-        axisLabel= list(show= F),
-        splitNumber= 20,
+        boundaryGap = T,
+        axisLine= list(onZero= T),
+        axisTick= list(show= T),
+        splitLine= list(show= T),
+        axisLabel= list(show= T),
+        #splitNumber= 20,
         min= 'dataMin',
         max= 'dataMax',
         axisPointer= list(
-          label= list(
-            formatter = axisPointer_formatter
+          label= list( 
+         #   z = 100
+           #formatter = axisPointer_formatter
             
           )
         )
@@ -162,10 +164,10 @@ posiont_tooltip = gsub('\n','',posiont_tooltip)
         scale= T,
         gridIndex= 1,
         splitNumber= 2,
-        axisLabel= list(show= F),
-        axisLine= list(show= F),
-        axisTick= list(show= F),
-        splitLine= list(show= F)
+        axisLabel= list(show= T),
+        axisLine= list(show= T),
+        axisTick= list(show= T),
+        splitLine= list(show= T)
       )
     ),
     dataZoom= list(
@@ -208,11 +210,15 @@ posiont_tooltip = gsub('\n','',posiont_tooltip)
         )
       ),
       list(
-        name= 'Volumn',
+        name= 'cci',
         type= 'line',
+        data= cci,
+        smooth= T,
+        lineStyle= list(
+          normal= list(opacity= 0.5)
+        ),
         xAxisIndex= 1,
-        yAxisIndex= 1,
-        data= cci
+        yAxisIndex= 1
       )
     )
   )

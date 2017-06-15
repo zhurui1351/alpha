@@ -1,0 +1,211 @@
+<!-- extend from base layout -->
+{% extends "base.html" %}
+{% block content %}
+ <form id = 'defaultForm' class="form-horizontal" method="post" action=''>
+     <button type="button" class="btn btn-primary" onclick="getstrategy();">确定</button>
+     <div id="stock" style="width: 1400px;height:600px;"></div>
+ </form>
+
+
+<script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var mychart_predict = echarts.init(document.getElementById('stock'));
+          function getstrategy()
+    {
+        $.post('getdata').done(function(options){
+            var bar = options['bar'];
+            var cci = options['cci'];
+            var sma = options['sma']
+            var dates = options['dates']
+            option = {
+        backgroundColor: '#eee',
+        animation: false,
+        legend: {
+            bottom: 10,
+            left: 'center',
+            data: ['stockdata', 'MA20']
+        },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'cross'
+            },
+            backgroundColor: 'rgba(245, 245, 245, 0.8)',
+            borderWidth: 1,
+            borderColor: '#ccc',
+            padding: 10,
+            textStyle: {
+                color: '#000'
+            },
+            position: function (pos, params, el, elRect, size) {
+                var obj = {top: 10};
+                obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
+                return obj;
+            },
+            extraCssText: 'width: 170px'
+        },
+        axisPointer: {
+            link: {xAxisIndex: 'all'},
+            label: {
+                backgroundColor: '#777'
+            }
+        },
+        toolbox: {
+            feature: {
+                dataZoom: {
+                    yAxisIndex: false
+                },
+                brush: {
+                    type: ['lineX', 'clear']
+                }
+            }
+        },
+        brush: {
+            xAxisIndex: 'all',
+            brushLink: 'all',
+            outOfBrush: {
+                colorAlpha: 0.1
+            }
+        },
+        grid: [
+            {
+                left: '10%',
+                right: '8%',
+                height: '50%'
+            },
+            {
+                left: '10%',
+                right: '8%',
+                top: '63%',
+                height: '16%'
+            }
+        ],
+        xAxis: [
+            {
+                type: 'category',
+                data: dates,
+                scale: true,
+                boundaryGap : false,
+                axisLine: {onZero: false},
+                splitLine: {show: false},
+                splitNumber: 20,
+                min: 'dataMin',
+                max: 'dataMax',
+                axisPointer: {
+                    z: 100
+                }
+            },
+            {
+                type: 'category',
+                gridIndex: 1,
+                data: dates,
+                scale: true,
+                boundaryGap : false,
+                axisLine: {onZero: false},
+                axisTick: {show: false},
+                splitLine: {show: false},
+                axisLabel: {show: false},
+                splitNumber: 20,
+                min: 'dataMin',
+                max: 'dataMax',
+                axisPointer: {
+                    label: {
+                        formatter: function (params) {
+                            var seriesValue = (params.seriesData[0] || {}).value;
+                            return params.value
+                            + (seriesValue != null
+                                ? '\n' + echarts.format.addCommas(seriesValue)
+                                : ''
+                            );
+                        }
+                    }
+                }
+            }
+        ],
+        yAxis: [
+            {
+                scale: true,
+                splitArea: {
+                    show: true
+                }
+            },
+            {
+                scale: true,
+                gridIndex: 1,
+                splitNumber: 2,
+                axisLabel: {show: false},
+                axisLine: {show: false},
+                axisTick: {show: false},
+                splitLine: {show: false}
+            }
+        ],
+        dataZoom: [
+            {
+                type: 'inside',
+                xAxisIndex: [0, 1],
+                start: 98,
+                end: 100
+            },
+            {
+                show: true,
+                xAxisIndex: [0, 1],
+                type: 'slider',
+                top: '85%',
+                start: 98,
+                end: 100
+            }
+        ],
+        series: [
+            {
+                name: 'bar data',
+                type: 'candlestick',
+                data: bar,
+                itemStyle: {
+                    normal: {
+                        borderColor: null,
+                        borderColor0: null
+                    }
+                },
+                tooltip: {
+                    formatter: function (param) {
+                        param = param[0];
+                        return [
+                            'Date: ' + param.name + '<hr size=1 style="margin: 3px 0">',
+                            'Open: ' + param.data[0] + '<br/>',
+                            'Close: ' + param.data[1] + '<br/>',
+                            'Lowest: ' + param.data[2] + '<br/>',
+                            'Highest: ' + param.data[3] + '<br/>'
+                        ].join('');
+                    }
+                }
+            },
+            {
+                name: 'MA5',
+                type: 'line',
+                data: sma,
+                smooth: true,
+                lineStyle: {
+                    normal: {opacity: 0.5}
+                }
+            },
+            {
+                name: 'CCI',
+                type: 'line',
+                xAxisIndex: 1,
+                yAxisIndex: 1,
+                smooth: true,
+                data: cci
+            }
+        ]
+    };
+            mychart_predict.setOption(option);
+        });
+    };
+
+    </script>
+
+{% endblock %}
+
+
+
+

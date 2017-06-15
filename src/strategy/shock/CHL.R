@@ -127,6 +127,6 @@ CHLframework = function()
   }
   
   records = position$records
-  #records = position$getRecords()
-  basic_analysis(records)
+  records = position$getRecords()
+  basic_analysis(position$records)
 }
