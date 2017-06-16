@@ -32,34 +32,38 @@ dates = data['datetime'].tolist()
 dates = [ datetime.datetime.strptime(d, "%Y-%m-%d %H:%M:%S") for d in dates]
 data.index =  dates
 
-data = data['2015']
-
-
-data = robjects.DataFrame(data)
-
-freq = 5
-datar = robjects.r['getdata'](data,freq)
-datar = pandas2ri.ri2py(datar)
-
-dates = datar['Date']
-dates = dates.tolist()
-bar = datar[['Open','Close','Low','High']]
-bar = np.array(bar)
-bar = bar.tolist()
-cci = datar['cci']
-cci = cci.tolist()
-cci = [round(c,2) for c in cci]
-sma = datar['sma']
-sma = sma.tolist()
-
 
 @app.route('/')
 @app.route('/index', methods = ['GET', 'POST'])
 def index():
-    return render_template('index.html',bar=bar,sma=sma,cci=cci,dates=dates)
+    return render_template('index.html')
 
 
 @app.route('/getdata', methods = ['GET', 'POST'])
 def getdata():
+    date = request.form['date']
+    date = '2015'
+    print('ok')
+    print(date)
+
+    datar = data[date]
+    datar = robjects.DataFrame(datar)
+
+    freq = 5
+    datar = robjects.r['getdata'](datar,freq)
+    datar = pandas2ri.ri2py(datar)
+
+    dates = datar['Date']
+    dates = dates.tolist()
+    bar = datar[['Open','Close','Low','High']]
+    bar = np.array(bar)
+    bar = bar.tolist()
+    cci = datar['cci']
+    cci = cci.tolist()
+    cci = [round(c,2) for c in cci]
+    sma = datar['sma']
+    sma = sma.tolist()
+
+
     option = {'bar':bar,'sma':sma,'cci':cci,'dates':dates}
     return jsonify(option)

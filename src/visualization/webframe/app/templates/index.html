@@ -2,6 +2,7 @@
 {% extends "base.html" %}
 {% block content %}
  <form id = 'defaultForm' class="form-horizontal" method="post" action=''>
+     <input type="text" class="" name="date"  id="date" placeholder="请输入日期"/>
      <button type="button" class="btn btn-primary" onclick="getstrategy();">确定</button>
      <div id="stock" style="width: 1400px;height:600px;"></div>
  </form>
@@ -12,7 +13,8 @@
         var mychart_predict = echarts.init(document.getElementById('stock'));
           function getstrategy()
     {
-        $.post('getdata').done(function(options){
+        var date = $("#date").val();
+        $.post('getdata',{date:date}).done(function(options){
             var bar = options['bar'];
             var cci = options['cci'];
             var sma = options['sma']
