@@ -9,15 +9,15 @@ nbarframework = function()
 {
   
   dbname ='china_future_ods_m'
-  tbname = 'dlami'
-  freq = 15
+  tbname = 'sqrbmi'
+  freq = 5
   orgin_data = getdata(dbname,tbname,freq)
-  data = orgin_data
   
+  data = orgin_data 
   #data$sma = lag(SMA(data$Close,20),1)
   #data = na.omit(data)
-  #data$atr = ATR(data,10)$atr
-  #data = na.omit(data)
+  data$atr = ATR(data,20)$atr
+  data = na.omit(data)
   
   nbarstate = NbarState$new()
   position = Position$new()  
@@ -29,7 +29,7 @@ nbarframework = function()
   pren = 1
   pred = data[1:pren,]
   
-  prepeakn = 4
+  prepeakn = 3
   predpeak = data[1:prepeakn,]
   
   for(i in (prepeakn+1):nrow(data))
@@ -49,3 +49,4 @@ nbarframework = function()
   records = position$getRecords()
   basic_analysis(position$records)
 }
+

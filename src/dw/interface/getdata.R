@@ -8,6 +8,13 @@ getdata = function(dbname,tbname,freq=15,isxts=T)
   if(isxts)
   {
     data = xts(data[,c('Open','High','Low','Close','Vol','Oi')],order.by=as.POSIXct(data$datetime,format='%Y-%m-%d %H:%M:%S'))
+    fst = substring(as.character(index(data)[1]),12,19)
+    if(fst != '09:00:00')
+    {
+      days = unique(as.character(as.Date(index(data))))
+      data = data[days[2:length(days)]]
+    }
+    
   }
   if(freq != 1)
   {

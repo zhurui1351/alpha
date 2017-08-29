@@ -14,7 +14,12 @@ soybean_b = list(contract=c('dlb01','dlb03','dlb05','dlb07','dlb09','dlb11'),mai
 soyabean_meal = list(contract=c('dlm01','dlm03','dlm05','dlm06','dlm07','dlm08','dlm09','dlm11','dlm12'),main='dlmmi',symbol='dlm')
 #豆油
 soybean_oil = list(contract=c('dly01','dly03','dly05','dly07','dly08','dly09','dly11','dly12'),main='dlymi',symbol='dly')
-
+#豆油
+soybean_oil = list(contract=c('dly01','dly03','dly05','dly07','dly08','dly09','dly11','dly12'),main='dlymi',symbol='dly')
+#螺纹钢
+rb_steel = list(contract=c('sqrb01','sqrb02','sqrb03','sqrb04','sqrb05','sqrb06','sqrb07','sqrb08','sqrb09','sqrb10','sqrb11','sqrb12'),main='sqrbmi',symbol='sqrb')
+#鸡蛋
+jd = list(contract=c('dljd01','dljd02','dljd03','dljd04','dljd05','dljd06','dljd09','dljd10','dljd11','dljd12'),main='dljdmi',symbol='dljd')
 
 #china_future_symbols = list('corp'=corp,'soybean_a'=soybean_a,'soybean_b'=soybean_b,'soyabean_meal'=soyabean_meal)
-china_future_symbols = list('soybean_a'=soybean_a)
+china_future_symbols = list('jd'=jd)

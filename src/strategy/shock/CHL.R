@@ -66,7 +66,9 @@ CHL_strategy = function(d,position,pred,chlstatus,losspoint=10,winpoint=10,n=1)
     movefixpoints = MoveFixPoints$new(barstate)
     
     op = ifelse(open > prehigh,open,prehigh)
-    stoploss = short_base# op - losspoint 
+    #stoploss = short_base# op - losspoint 
+    stoploss = ifelse((open-short_base)>30,(op-30),short_base)#op - losspoint  #op - losspoint##prelow# op - losspoint 
+    
     stopwin = op + winpoint 
     r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=stopwin,stoploss=stoploss,type='long',exittype='')
     trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=movefixpoints)
@@ -78,7 +80,9 @@ CHL_strategy = function(d,position,pred,chlstatus,losspoint=10,winpoint=10,n=1)
     movefixpoints = MoveFixPoints$new(barstate)
     
     op = ifelse(open < prelow,open,prelow)
-    stoploss = long_base# op + losspoint 
+    #stoploss = long_base# op + losspoint 
+    stoploss = ifelse((long_base-open)>30,(op+30),long_base)#long_base#op + losspoint#+ losspoint#line+1#prehigh#op + losspoint 
+    
     stopwin = op - winpoint
     r = data.frame(opentime=time,closetime=NA,open=op,close=NA,stopwin=stopwin,stoploss=stoploss,type='short',exittype='')
     trade = Trade$new(r,stopwin=NULL,stoploss=defaultstoploss,movestop=movefixpoints)
@@ -120,7 +124,7 @@ CHLframework = function()
   {
     d = data[i,]
     
-    position = CHL_strategy(d,position,pred,chl_status,losspoint=losspoint,winpoint=winpoint,n=0)
+    position = CHL_strategy(d,position,pred,chl_status,losspoint=losspoint,winpoint=winpoint,n=1)
     position$update(d,NULL,iswinfirst=F)
     chl_status$update(d)   
     pred = data[(i-pren+1):i,]
