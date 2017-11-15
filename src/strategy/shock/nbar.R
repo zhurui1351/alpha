@@ -11,19 +11,19 @@ nbarframework = function()
   dbname ='china_future_ods_m'
   tbname = 'sqrbmi'
   freq = 5
-  orgin_data = getdata(dbname,tbname,freq)
+  orgin_data = getdata(dbname,tbname,freq,isxts=T)
   
   data = orgin_data 
   #data$sma = lag(SMA(data$Close,20),1)
-  #data = na.omit(data)
+  #data = na.omit(data)req
   data$atr = ATR(data,20)$atr
   data = na.omit(data)
   
   nbarstate = NbarState$new()
   position = Position$new()  
   
-  winpoint = 15
-  losspoint = 15
+  winpoint = 20
+  losspoint = 20
   n = 3
   
   pren = 1
@@ -50,3 +50,5 @@ nbarframework = function()
   basic_analysis(position$records)
 }
 
+result = rollapply(sma,50,function(x){ p=adf.test(as.numeric(x));return(p$p.value);})
+resultar = rollapply(sma,50,function(x){ p=ar(as.numeric(x),order.max=1);return(p$ar);})

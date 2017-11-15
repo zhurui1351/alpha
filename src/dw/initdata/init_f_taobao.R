@@ -8,7 +8,7 @@ overwrite = T
 night_time_dl = list(list(startdate='201401',enddate='20150507',starttime='21:01:00',endtime='02:30:00'),
                      list(startdate='20150508',enddate='',starttime='21:01:00',endtime='23:30:00'))
 
-night_time_sq_menta = list(list(startdate='20131220',enddate='',starttime='21:01:00',endtime='00:01:00'))
+night_time_sq_menta = list(list(startdate='20131220',enddate='',starttime='21:01:00',endtime='01:00:00'))
 
 corp = list(c('dlc01','DLC01.*'),c('dlc03','DLC03.*'),c('dlc05','DLC05.*'),c('dlc07','DLC07.*'),c('dlc09','DLC09.*'),c('dlc11','DLC11.*'))
 soybean_a = list(list(c('dlax01','DLAX01.*'),c('dlax03','DLAX03.*'),c('dlax05','DLAX05.*'),c('dlax07','DLAX07.*'),c('dlax09','DLAX09.*'),c('dlax11','DLAX11.*'),
@@ -29,7 +29,11 @@ rb_steel = list(list(c('sqrb01','SQRB01.*'),c('sqrb02','SQRB02.*'),c('sqrb03','S
 jd = list(list(c('dljd01','DLJD01.*'),c('dljd02','DLJD02.*'),c('dljd03','DLJD03.*'),c('dljd04','DLJD04.*'),c('dljd05','DLJD05.*'),c('dljd06','DLJD06.*'),
                c('dljd09','DLJD09.*'),c('dljd10','DLJD10.*'),c('dljd11','DLJD11.*'),c('dljd12','DLJD12.*')),
           night_time = NULL)
-symbols = list(jd)
+#棕榈油
+paml_oil = list(list(c('dlp01','DLP01.*'),c('dlp02','DLP02.*'),c('dlp03','DLP03.*'),c('dlp04','DLP04.*'),c('dlp05','DLP05.*'),c('dlp06','DLP06.*'),c('dlp07','DLP07.*'),c('dlp08','DLP08.*')
+                     ,c('dlp09','DLP09.*'),c('dlp10','DLP10.*'),c('dlp11','DLP11.*'),c('dlp12','DLP12.*')),night_time = night_time_dl)
+
+symbols = list(paml_oil,jd)
 for(i in 1:length(symbols))
 {
   syms = symbols[[i]]

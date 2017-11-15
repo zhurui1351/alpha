@@ -20,6 +20,7 @@ soybean_oil = list(contract=c('dly01','dly03','dly05','dly07','dly08','dly09','d
 rb_steel = list(contract=c('sqrb01','sqrb02','sqrb03','sqrb04','sqrb05','sqrb06','sqrb07','sqrb08','sqrb09','sqrb10','sqrb11','sqrb12'),main='sqrbmi',symbol='sqrb')
 #鸡蛋
 jd = list(contract=c('dljd01','dljd02','dljd03','dljd04','dljd05','dljd06','dljd09','dljd10','dljd11','dljd12'),main='dljdmi',symbol='dljd')
-
+#棕榈油
+paml_oil = list(contract=c('dlp01','dlp02','dlp03','dlp04','dlp05','dlp06','dlp07','dlp08','dlp09','dlp10','dlp11','dlp12'),main='dlpmi',symbol='dlp')
 #china_future_symbols = list('corp'=corp,'soybean_a'=soybean_a,'soybean_b'=soybean_b,'soyabean_meal'=soyabean_meal)
-china_future_symbols = list('jd'=jd)
+china_future_symbols = list('paml_oil'=paml_oil,'jd'=jd)

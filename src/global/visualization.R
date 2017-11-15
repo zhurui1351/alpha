@@ -1,12 +1,12 @@
 visualize_bar = function(data,start='2015-01-01',end='2015-06-01')
 {
-  
-  stock$sma10 = SMA(stock$close,10)
+  stock = data
+  stock$sma10 = SMA(Cl(data),10)
   stock = na.omit(stock)
   dates = as.character(stock$date)
   
   data = as.data.frame(OHLC(stock))
-  data = data[,c('open','close','low','high')]
+  data = data[,c('Open','Close','Low','High')]
   rownames(data) = NULL
   colnames(data) = NULL
   data = as.matrix(data)

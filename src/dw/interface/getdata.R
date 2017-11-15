@@ -16,6 +16,10 @@ getdata = function(dbname,tbname,freq=15,isxts=T)
     }
     
   }
+  else
+  {
+    return(data)
+  }
   if(freq != 1)
   {
     data = to_minutes(data,freq)

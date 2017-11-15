@@ -28,25 +28,37 @@ remove_duplicated = function(p)
 fill_missing_value = function(basetime,pricedata)
 {
   datatimes = as.character(unique(index(pricedata)))
-  iscrossday = ifelse(is.element('00:01:00',basetime),T,F)
+  iscrossday = ifelse(is.element('00:00:00',basetime),T,F)
+  crossdayindex = which(basetime == '00:00:00')
   basedates = as.character(unique(as.Date(index(pricedata))))
-  newpricedata = pricedata
+  newpricedata = NULL
   for (day in basedates)
   {
     #print(day)
     starttime = basetime[1]
     endtime = basetime[length(basetime)]
     daystart = paste(day,starttime)
-    dayend = ifelse(iscrossday,paste(as.character(as.Date(day) + 1),endtime),paste(day,endtime))
+    nextday = as.character(as.Date(day) + 1)
+    dayend = ifelse(iscrossday,paste(nextday,endtime),paste(day,endtime))
     dayperd = paste(daystart,dayend,sep='/')
     daydata = pricedata[dayperd]
+    newpricedata = rbind(newpricedata,daydata)
     p = NULL
     if(nrow(daydata) == 0) next
     daytime = substring(as.character(index(daydata)),12,19)
     missingtime = setdiff(basetime,daytime)
     for (mt in missingtime)
     {
-      mttime = as.POSIXct(paste(day,mt))
+      if(iscrossday)
+      {
+        mtindex = which(basetime == mt)
+        whichday = ifelse(mtindex >= crossdayindex,nextday,day)
+        mttime = as.POSIXct(paste(whichday,mt)) 
+      }
+      else
+      {
+        mttime = as.POSIXct(paste(day,mt)) 
+      }
       #print(mttime)
       i = which(basetime == mt)
       while (!is.element(basetime[i],daytime) && i > 0 )
