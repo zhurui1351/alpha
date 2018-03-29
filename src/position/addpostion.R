@@ -79,7 +79,10 @@ getStopPriceLimitHand = function(enterprice,atr,hands=3,addin=0,n=50)
   print(test_profit)
 }
 
-
+getShortAndLongBalance = function(shortprice,longprice,price,shortstopprice,longstopprice,atr=15)
+{
+  
+}
 
 getStopPriceAddLoss = function(enterprice,atr,hands=3,loss=15,n=50,type='long')
 {
@@ -87,7 +90,7 @@ getStopPriceAddLoss = function(enterprice,atr,hands=3,loss=15,n=50,type='long')
   stop_atr = atr
   price = enterprice
   prewin = 0
-  test_profit = data.frame(price=price,hand=1,balanceprice=price-loss,prewin=0)
+  test_profit = data.frame(price=price,hand=1,meanprice=price,balanceprice=price-loss,prewin=0)
   allprices = c(enterprice)
   for(i in 1:n)
   {
@@ -100,7 +103,7 @@ getStopPriceAddLoss = function(enterprice,atr,hands=3,loss=15,n=50,type='long')
       balanceprice = ifelse(type=='long',trunc(meanprice - loss/hand) -1,trunc(meanprice + loss/hand) + 1) 
       
       prewin = prewin + (hand-1)*atr
-      r = data.frame(price=price,hand=hand,balanceprice=balanceprice,prewin=prewin)
+      r = data.frame(price=price,hand=hand,meanprice=meanprice,balanceprice=balanceprice,prewin=prewin)
       test_profit = rbind(test_profit,r)
     }
     else
@@ -109,7 +112,7 @@ getStopPriceAddLoss = function(enterprice,atr,hands=3,loss=15,n=50,type='long')
       #meanprice = meanprice
       #hand = hand
       prewin = prewin + hand*atr
-      r = data.frame(price=price,hand=hand,balanceprice=balanceprice,prewin=prewin)
+      r = data.frame(price=price,hand=hand,meanprice=meanprice,balanceprice=balanceprice,prewin=prewin)
       test_profit = rbind(test_profit,r)
     }
     
@@ -117,6 +120,7 @@ getStopPriceAddLoss = function(enterprice,atr,hands=3,loss=15,n=50,type='long')
   print(test_profit)
 }
 
-hands = (3795-3677)/15
+hands = (3795-3677)/4
 
-getStopPriceAddLoss(enterprice=3795,atr=15,hands=7,loss=15,n=7,type='short')
+getStopPriceAddLoss(enterprice= 6540,atr=15,hands=10,loss=20,n=25,type='long')
+
